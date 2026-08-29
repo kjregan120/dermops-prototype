@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "firstName": "Maya",
+    "lastName": "Patel",
+    "credentials": "MD",
+    "role": "physician",
+    "specialty": "Dermatology / Mohs Surgery",
+    "email": "",
+    "active": true,
+    "createdAt": "2024-11-01T09:00:00.000Z",
+    "updatedAt": "2024-11-01T09:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "firstName": "Sam",
+    "lastName": "Green",
+    "credentials": "MD",
+    "role": "physician",
+    "specialty": "General Dermatology",
+    "email": "",
+    "active": true,
+    "createdAt": "2024-11-01T09:00:00.000Z",
+    "updatedAt": "2024-11-01T09:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "firstName": "Nora",
+    "lastName": "Bianchi",
+    "credentials": "RN",
+    "role": "nurse",
+    "specialty": "Post-op / Wound Care",
+    "email": "",
+    "active": true,
+    "createdAt": "2024-11-15T09:00:00.000Z",
+    "updatedAt": "2024-11-15T09:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "firstName": "Alex",
+    "lastName": "Rivera",
+    "credentials": "",
+    "role": "front_desk",
+    "specialty": "",
+    "email": "",
+    "active": true,
+    "createdAt": "2024-11-15T09:00:00.000Z",
+    "updatedAt": "2024-11-15T09:00:00.000Z"
+  },
+  {
+    "id": 5,
+    "firstName": "Jordan",
+    "lastName": "Lee",
+    "credentials": "CMA",
+    "role": "medical_assistant",
+    "specialty": "",
+    "email": "",
+    "active": true,
+    "createdAt": "2024-12-02T09:00:00.000Z",
+    "updatedAt": "2024-12-02T09:00:00.000Z"
+  }
+]

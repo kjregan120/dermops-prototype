@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "customerId": 1,
+    "subject": "Surgery instructions",
+    "status": "resolved",
+    "priority": "normal",
+    "ownerUserId": 3,
+    "createdAt": "2026-08-28T07:30:00.000Z",
+    "updatedAt": "2026-08-28T08:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "customerId": 2,
+    "subject": "Post-op bleeding question",
+    "status": "awaiting_patient",
+    "priority": "high",
+    "ownerUserId": 3,
+    "createdAt": "2026-08-27T15:00:00.000Z",
+    "updatedAt": "2026-08-27T15:10:00.000Z"
+  },
+  {
+    "id": 3,
+    "customerId": 3,
+    "subject": "Prescription refill",
+    "status": "awaiting_staff",
+    "priority": "normal",
+    "ownerUserId": 4,
+    "createdAt": "2026-08-26T13:00:00.000Z",
+    "updatedAt": "2026-08-26T13:20:00.000Z"
+  }
+]

@@ -183,11 +183,17 @@ button{cursor:pointer}
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <h2 id="patientName">Jane Smith</h2>
             <select id="patientSwitcher" class="status-select" onchange="switchPatient(+this.value)"></select>
+            <button class="btn ghost" style="padding:7px 10px" onclick="openEditPatient()">Edit</button>
+            <button class="btn ghost" style="padding:7px 10px" onclick="deleteCurrentPatient()">Delete</button>
           </div>
           <div class="meta" id="patientMeta">DOB 04/12/1968 · 58F · MRN 101284 · Wilton, CT</div>
           <div class="patient-alerts" id="patientAlerts"></div>
         </div>
-        <div><button class="btn primary" onclick="openNew()">＋ New</button></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn ghost" onclick="openNewProvider()">＋ Provider</button>
+          <button class="btn ghost" onclick="openNewPatient()">＋ Patient</button>
+          <button class="btn primary" onclick="openNew()">＋ New</button>
+        </div>
       </section>
 
       <nav class="patient-tabs">
@@ -232,7 +238,7 @@ button{cursor:pointer}
             <div class="section-title" style="margin-top:0"><h3>Appointments</h3><button class="btn primary" onclick="openNew()">＋ Add Appointment</button></div>
             <div class="table-scroll">
               <table class="table">
-                <thead><tr><th>Patient</th><th>Date</th><th>Time</th><th>Type / Site</th><th>Provider</th><th>Facility</th><th>Status</th></tr></thead>
+                <thead><tr><th>Patient</th><th>Date</th><th>Time</th><th>Type / Site</th><th>Provider</th><th>Facility</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody id="apptRows"></tbody>
               </table>
             </div>
@@ -340,13 +346,16 @@ button{cursor:pointer}
   <div class="modal-card">
     <h3>Create New</h3>
     <div class="form-grid">
-      <div><label class="small">Type</label><select class="btn" style="width:100%"><option>Appointment</option><option>Procedure</option><option>Task</option><option>Prescription</option><option>Message</option></select></div>
-      <div><label class="small">Patient</label><input class="btn" style="width:100%" value="Jane Smith"></div>
-      <div><label class="small">Date</label><input class="btn" style="width:100%" type="date" value="2026-08-28"></div>
-      <div><label class="small">Time</label><input class="btn" style="width:100%" type="time" value="08:00"></div>
-      <div class="full"><label class="small">Notes</label><textarea class="btn" style="width:100%;min-height:90px" placeholder="Optional"></textarea></div>
+      <div><label class="small">Type</label><select id="newKind" class="btn" style="width:100%"><option>Appointment</option><option>Procedure</option><option>Task</option><option>Prescription</option><option>Message</option></select></div>
+      <div><label class="small">Patient</label><select id="newPatient" class="btn" style="width:100%"></select></div>
+      <div><label class="small">Appointment Type</label><select id="newApptType" class="btn" style="width:100%"></select></div>
+      <div><label class="small">Provider</label><select id="newApptProvider" class="btn" style="width:100%"></select></div>
+      <div><label class="small">Date</label><input id="newDate" class="btn" style="width:100%" type="date" value="2026-08-28"></div>
+      <div><label class="small">Time</label><input id="newTime" class="btn" style="width:100%" type="time" value="08:00"></div>
+      <div class="full"><label class="small">Site</label><input id="newSite" class="btn" style="width:100%" placeholder="e.g. Left temple"></div>
+      <div class="full"><label class="small">Notes</label><textarea id="newNotes" class="btn" style="width:100%;min-height:90px" placeholder="Optional"></textarea></div>
     </div>
-    <div class="modal-actions"><button class="btn" onclick="closeNew()">Cancel</button><button class="btn primary" onclick="closeNew();toast('Saved to mock data')">Save</button></div>
+    <div class="modal-actions"><button class="btn" onclick="closeNew()">Cancel</button><button class="btn primary" onclick="saveNew()">Save</button></div>
   </div>
 </div>
 <div class="modal" id="siteModal">
@@ -365,8 +374,50 @@ button{cursor:pointer}
     <div class="modal-actions"><button class="btn" onclick="cancelPlacement()">Cancel</button><button class="btn primary" onclick="confirmPlacement()">Save Site</button></div>
   </div>
 </div>
+<div class="modal" id="patientModal">
+  <div class="modal-card">
+    <h3 id="patientModalTitle">New Patient</h3>
+    <div class="form-grid">
+      <div class="full" id="npMrnRow" style="display:none">
+        <label class="small">MRN</label>
+        <input id="npMrn" class="btn" style="width:100%" disabled>
+      </div>
+      <div><label class="small">First Name</label><input id="npFirst" class="btn" style="width:100%"></div>
+      <div><label class="small">Last Name</label><input id="npLast" class="btn" style="width:100%"></div>
+      <div><label class="small">Preferred Name</label><input id="npPreferred" class="btn" style="width:100%" placeholder="Optional"></div>
+      <div><label class="small">Sex at Birth</label><select id="npSex" class="btn" style="width:100%"><option value="F">F</option><option value="M">M</option></select></div>
+      <div><label class="small">Date of Birth</label><input id="npDob" class="btn" style="width:100%" type="date"></div>
+      <div><label class="small">Phone</label><input id="npPhone" class="btn" style="width:100%" placeholder="Optional"></div>
+      <div class="full"><label class="small">Email</label><input id="npEmail" class="btn" style="width:100%" placeholder="Optional"></div>
+      <div class="full"><label class="small">City, State</label><input id="npCity" class="btn" style="width:100%" placeholder="Optional"></div>
+    </div>
+    <div class="modal-actions"><button class="btn" onclick="closePatientModal()">Cancel</button><button class="btn primary" onclick="savePatientModal()">Save</button></div>
+  </div>
+</div>
+<div class="modal" id="providerModal">
+  <div class="modal-card">
+    <h3>New Provider / Staff</h3>
+    <div class="form-grid">
+      <div><label class="small">First Name</label><input id="pvFirst" class="btn" style="width:100%"></div>
+      <div><label class="small">Last Name</label><input id="pvLast" class="btn" style="width:100%"></div>
+      <div><label class="small">Role</label>
+        <select id="pvRole" class="btn" style="width:100%">
+          <option value="physician">Physician</option>
+          <option value="nurse">Nurse</option>
+          <option value="medical_assistant">Medical Assistant</option>
+          <option value="front_desk">Front Desk</option>
+        </select>
+      </div>
+      <div><label class="small">Credentials</label><input id="pvCredentials" class="btn" style="width:100%" placeholder="e.g. MD, RN, CMA"></div>
+      <div class="full"><label class="small">Specialty</label><input id="pvSpecialty" class="btn" style="width:100%" placeholder="Optional"></div>
+      <div class="full"><label class="small">Email</label><input id="pvEmail" class="btn" style="width:100%" placeholder="Optional"></div>
+    </div>
+    <div class="modal-actions"><button class="btn" onclick="closeProviderModal()">Cancel</button><button class="btn primary" onclick="saveNewProvider()">Save</button></div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
+<script src="data-store.js"></script>
 <script>
 const workflowLibrary = {
  'Mohs Surgery': {
@@ -408,60 +459,16 @@ const workflowLibrary = {
 };
 function getWorkflow(p){ return workflowLibrary[p.procedure] || workflowLibrary['Mohs Surgery']; }
 
-const patients = [
- {
-   id:1,name:'Jane Smith',dob:'04/12/1968',sex:'58F',mrn:'101284',city:'Wilton, CT',
-   allergy:'Penicillin',medical:[['Hypertension','Active'],['Diabetes','No']],
-   skin:[['BCC','Left temple · 2026'],['AK','Left forearm · treated']],
-   meds:[['Lisinopril','10 mg']],
-   headline:'Mohs Surgery · Left Temple',
-   sub:'Basal cell carcinoma · Dr. Maya Patel · Mohs 2',
-   procedure:'Mohs Surgery',site:'Left temple',dx:'BCC',size:'9 mm',appt:'Today · 8:00 AM',
-   procIndex:3,room:'Mohs 2',anesthetic:'Lidocaine + epi'
- },
- {
-   id:2,name:'Michael Jones',dob:'09/22/1974',sex:'51M',mrn:'101391',city:'Ridgefield, CT',
-   allergy:'None',medical:[['Hyperlipidemia','Active'],['Hypertension','Controlled']],
-   skin:[['Atypical nevus','Upper back · 2026'],['SCC','Right ear · 2023']],
-   meds:[['Atorvastatin','20 mg']],
-   headline:'Excision · Upper Back',
-   sub:'Atypical nevus · Dr. Maya Patel · Procedure Room 1',
-   procedure:'Excision',site:'Upper back',dx:'Atypical nevus',size:'7 mm',appt:'Today · 8:30 AM',
-   procIndex:2,room:'Procedure Room 1',anesthetic:'Lidocaine + epi',marginPlan:'3 mm planned'
- },
- {
-   id:3,name:'Sarah Williams',dob:'02/08/1986',sex:'40F',mrn:'101447',city:'Westport, CT',
-   allergy:'Sulfa',medical:[['Acne','Active'],['PCOS','History']],
-   skin:[['Acne','Face · active'],['Nevus','Left shoulder · observe']],
-   meds:[['Spironolactone','100 mg']],
-   headline:'Dermatology Follow-up',
-   sub:'Acne management · Dr. Green · Room 3',
-   procedure:'Follow-up',site:'Face',dx:'Acne',size:'—',appt:'Today · 9:00 AM',
-   procIndex:3,room:'Room 3',provider:'Dr. Green',assessment:'Improving'
- },
- {
-   id:4,name:'Robert Chen',dob:'11/17/1959',sex:'66M',mrn:'101502',city:'New Canaan, CT',
-   allergy:'Latex',medical:[['Type 2 Diabetes','Active'],['Hypertension','Active']],
-   skin:[['SCC','Left cheek · 2024'],['AK','Scalp · multiple']],
-   meds:[['Metformin','500 mg BID'],['Amlodipine','5 mg']],
-   headline:'Full Skin Examination',
-   sub:'High-risk surveillance · Dr. Green · Room 2',
-   procedure:'Full Skin Exam',site:'Full body',dx:'History of SCC',size:'—',appt:'Today · 10:00 AM',
-   procIndex:3,room:'Room 2',provider:'Dr. Green',findings:'Scalp AKs noted'
- }
-];
-let currentPatientId=1;
+const TODAY = '2026-08-28';
+const CURRENT_USER_ID = 4; // logged-in support staff for this prototype (no auth yet)
 
-const sites=[
- {id:1,title:'Left Temple',dx:'Basal Cell Carcinoma',size:'9 mm',status:'Mohs today',biopsy:'08/14/2026',history:'Biopsy confirmed nodular BCC.',x:0.60,y:0.075,sizeStep:6,view:'front'},
- {id:2,title:'Right Shoulder',dx:'Atypical Nevus',size:'5 mm',status:'Observe',biopsy:'—',history:'Photographed for comparison.',x:0.26,y:0.17,sizeStep:4,view:'front'},
- {id:3,title:'Left Forearm',dx:'Actinic Keratosis',size:'6 mm',status:'Treated',biopsy:'—',history:'Cryotherapy completed 07/09/2026.',x:0.80,y:0.47,sizeStep:4,view:'front'}
-];
-let selectedSite=1;
+let currentPatientId;
+let selectedSite;
+let currentThread;
 
 function siteMarkerColor(s){
- if(s.status.includes('Mohs'))return '#b14f52';
- if(s.status==='Treated')return '#3f8a63';
+ if(s.status==='active')return '#b14f52';
+ if(s.status==='treated')return '#3f8a63';
  return '#c58a2c';
 }
 function sizeStepToPx(step,refWidth){ return refWidth*(0.03+ (+step)*0.013); }
@@ -550,7 +557,7 @@ function renderMarkers(){
  const wrap=document.getElementById('bodyMarkers'), img=document.getElementById('bodyImg');
  const rect={width:img.clientWidth,height:img.clientHeight};
  if(!rect.width){ return; }
- const visible = sites.filter(s=>s.view===currentBodyView);
+ const visible = DB.skinSitesForCustomer(currentPatientId).filter(s=>s.view===currentBodyView);
  let html = visible.map(s=>{
    const d = sizeStepToPx(s.sizeStep||4, rect.width);
    return `<div class="site-marker ${s.id===selectedSite?'selected':''}" style="left:${(s.x*100).toFixed(2)}%;top:${(s.y*100).toFixed(2)}%;width:${d}px;height:${d}px;background:${siteMarkerColor(s)}" onclick="event.stopPropagation();selectSite(${s.id})"></div>`;
@@ -591,9 +598,21 @@ function confirmPlacement(){
  const dx=document.getElementById('smDx').value || 'Unspecified';
  const procedure=document.getElementById('smProcedure').value;
  const notes=document.getElementById('smNotes').value.trim();
- const id=Math.max(0,...sites.map(s=>s.id))+1;
- sites.push({id,title:label||dx||'New Site',dx,procedure,size:'—',status:'Observe',biopsy:'—',history:notes||'Added from body map.',x:tempMarker.x,y:tempMarker.y,sizeStep:tempMarker.size,view:tempMarker.view});
- selectedSite=id;
+ const created = DB.skinSites.create({
+   customerId: currentPatientId,
+   title: label || dx || 'New Site',
+   diagnosis: dx,
+   procedure,
+   sizeMm: null,
+   status: 'observe',
+   view: tempMarker.view,
+   x: tempMarker.x,
+   y: tempMarker.y,
+   sizeStep: tempMarker.size,
+   biopsyDate: null,
+   notes: notes || 'Added from body map.'
+ });
+ selectedSite=created.id;
  tempMarker=null;
  addSiteMode=false;
  closeSiteModal();
@@ -604,24 +623,17 @@ function confirmPlacement(){
  toast('Site added');
 }
 function resizeSite(id,val){
- const s=sites.find(x=>x.id===id);
- if(s){ s.sizeStep=+val; renderMarkers(); }
+ DB.skinSites.update(id, {sizeStep:+val});
+ renderMarkers();
 }
-
-const appointments=[
- [1,'Jane Smith','08/28/2026','8:00 AM','Mohs Surgery','Left temple','Dr. Patel','SCCF Norwalk','Arrived'],
- [2,'Michael Jones','08/28/2026','8:30 AM','Excision','Upper back','Dr. Patel','SCCF Norwalk','Checked In'],
- [3,'Sarah Williams','08/28/2026','9:00 AM','Follow-up','Face / acne','Dr. Green','SCCF Norwalk','Confirmed'],
- [4,'Robert Chen','08/28/2026','10:00 AM','Full Skin Exam','Full body','Dr. Green','SCCF Norwalk','Confirmed'],
- [1,'Jane Smith','09/08/2026','10:00 AM','Follow-up','Left temple','Dr. Patel','SCCF Norwalk','Confirmed'],
- [1,'Jane Smith','09/22/2026','11:00 AM','Suture Removal','Left temple','Nurse Team','SCCF Norwalk','Pending']
-];
-const threads=[
- {id:1,name:'Jane Smith',subject:'Surgery instructions',msgs:[['me','Reminder: your Mohs surgery is scheduled for 8:00 AM today.'],['them','Thank you. I am here now.']]},
- {id:2,name:'Michael Jones',subject:'Post-op bleeding question',msgs:[['them','Is it normal for the wound to still bleed a little?'],['me','Please apply firm pressure for 20 minutes without checking the site.']]},
- {id:3,name:'Sarah Williams',subject:'Prescription refill',msgs:[['them','Can I get a refill of my spironolactone?'],['me','We routed this to your care team for review.']]}
-];
-let currentThread=1;
+function deleteSite(id){
+ DB.skinSites.remove(id);
+ const remaining = DB.skinSitesForCustomer(currentPatientId);
+ selectedSite = remaining.length ? remaining[0].id : null;
+ renderBodyMap();
+ renderSites();
+ toast('Site deleted');
+}
 
 function navigate(id){
  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -635,11 +647,73 @@ function toast(msg){
  clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.style.opacity=0,1700);
 }
 
-function getPatient(){ return patients.find(p=>p.id===currentPatientId); }
+function isoDateToUS(iso){
+ if(!iso) return '';
+ const [y,m,d]=iso.split('-');
+ return `${m}/${d}/${y}`;
+}
+function computeAge(dob){
+ const [y,m,d]=dob.split('-').map(Number);
+ const [ty,tm,td]=TODAY.split('-').map(Number);
+ let age=ty-y;
+ if(tm<m || (tm===m&&td<d)) age--;
+ return age;
+}
+function formatTime(t){
+ if(!t) return '';
+ let [h,m]=t.split(':').map(Number);
+ const ampm = h>=12?'PM':'AM';
+ h = h%12; if(h===0) h=12;
+ return `${h}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+function displayProviderName(u){
+ if(!u) return '';
+ return u.role==='physician' ? `Dr. ${u.lastName}` : `${u.firstName} ${u.lastName}`.trim();
+}
+function todaysAppointmentFor(customerId){
+ const appts = DB.appointmentsForCustomer(customerId);
+ return appts.find(a=>a.date===TODAY) || appts[0] || null;
+}
+function buildPatientViewModel(customerId){
+ const c = DB.customers.get(customerId);
+ if(!c) return null;
+ const appt = todaysAppointmentFor(customerId);
+ const site = appt && appt.skinSiteId ? DB.skinSites.get(appt.skinSiteId) : null;
+ const provider = appt ? DB.users.get(appt.providerId) : null;
+ const allergyStr = c.allergies.length ? c.allergies.map(a=>a.substance).join(', ') : 'None';
+ const medical = c.conditions.map(cond=>[cond.name, cond.status.charAt(0).toUpperCase()+cond.status.slice(1)]);
+ const skin = DB.skinSitesForCustomer(customerId).map(s=>[s.diagnosis, `${s.title} · ${s.status}`]);
+ const meds = c.medications.map(m=>[m.name, m.dose]);
+ const providerDisplay = displayProviderName(provider);
+ const room = appt ? appt.room : '';
+ const isToday = !!(appt && appt.date===TODAY);
+ const apptDisplay = appt ? `${isToday?'Today':isoDateToUS(appt.date)} · ${formatTime(appt.time)}` : '—';
+ return {
+  id:c.id, customerId:c.id,
+  appointmentId: appt?appt.id:null,
+  skinSiteId: site?site.id:null,
+  name:`${c.firstName} ${c.lastName}`,
+  dob:isoDateToUS(c.dob),
+  sex:`${computeAge(c.dob)}${c.sexAtBirth}`,
+  mrn:c.mrn, city:c.city,
+  allergy:allergyStr, medical, skin, meds,
+  headline: appt ? `${appt.type} · ${appt.site||(site?site.title:'')}` : `${c.firstName} ${c.lastName}`,
+  sub: appt ? `${site?site.diagnosis:appt.type} · ${providerDisplay} · ${room||appt.facility}` : '',
+  procedure: appt ? appt.type : 'Follow-up',
+  site: appt ? (appt.site || (site?site.title:'')) : '',
+  dx: site ? site.diagnosis : ((appt&&appt.findings) || (appt&&appt.assessment) || '—'),
+  size: site && site.sizeMm ? `${site.sizeMm} mm` : '—',
+  appt: apptDisplay,
+  procIndex: appt ? (appt.procIndex ?? 0) : 0,
+  room, anesthetic: appt?appt.anesthetic:undefined, marginPlan: appt?appt.marginPlan:undefined,
+  provider: providerDisplay, assessment: appt?appt.assessment:undefined, findings: appt?appt.findings:undefined
+ };
+}
+function getPatient(){ return buildPatientViewModel(currentPatientId); }
 
 function renderPatientSwitcher(){
  const s=document.getElementById('patientSwitcher');
- s.innerHTML=patients.map(p=>`<option value="${p.id}" ${p.id===currentPatientId?'selected':''}>${p.name}</option>`).join('');
+ s.innerHTML=DB.customers.list().map(c=>`<option value="${c.id}" ${c.id===currentPatientId?'selected':''}>${c.firstName} ${c.lastName}</option>`).join('');
 }
 
 function renderPatientContext(){
@@ -648,8 +722,7 @@ function renderPatientContext(){
  document.getElementById('patientMeta').textContent=`DOB ${p.dob} · ${p.sex} · MRN ${p.mrn} · ${p.city}`;
  document.getElementById('patientAlerts').innerHTML=`
    <span class="badge ${p.allergy==='None'?'ok':'danger'}">${p.allergy==='None'?'No known drug allergies':p.allergy+' allergy'}</span>
-   <span class="badge warn">${p.dx} · ${p.site}</span>
-   <span class="badge ok">${p.appt}</span>`;
+   ${p.appointmentId?`<span class="badge warn">${p.dx} · ${p.site}</span><span class="badge ok">${p.appt}</span>`:'<span class="badge">No appointments yet</span>'}`;
  document.getElementById('heroTitle').textContent=p.headline;
  document.getElementById('heroSub').textContent=p.sub;
  document.getElementById('procedureTitle').textContent=`${p.procedure} · ${p.name}`;
@@ -676,12 +749,17 @@ function renderPatientContext(){
 function switchPatient(id){
  currentPatientId=id;
  sexOverride=null;
+ currentBodyView='front';
+ const firstSite=DB.skinSitesForCustomer(id)[0];
+ selectedSite = firstSite ? firstSite.id : null;
  renderPatientSwitcher();
  renderPatientContext();
  renderProcedureState();
  renderTimeline();
  renderBodyMap();
- updateNote();
+ renderSites();
+ loadNoteForm();
+ updateNote(true);
  navigate('overview');
  toast(getPatient().name+' loaded');
 }
@@ -702,9 +780,12 @@ function renderProcedureState(){
 }
 function advanceProcedure(){
  const p=getPatient(), wf=getWorkflow(p);
- if(p.procIndex<wf.steps.length-1)p.procIndex++;
+ if(!p.appointmentId){ toast('No appointment linked to advance'); return; }
+ if(p.procIndex<wf.steps.length-1){
+  DB.appointments.update(p.appointmentId, {procIndex:p.procIndex+1});
+ }
  renderProcedureState();
- toast('Advanced to '+wf.steps[p.procIndex]);
+ toast('Advanced to '+wf.steps[getPatient().procIndex]);
 }
 function renderTimeline(){
  const p=getPatient();
@@ -714,38 +795,64 @@ function renderTimeline(){
  ? [['8:30 AM','Checked In','Excision','Upper back'],['8:42 AM','Roomed','Vitals complete','Procedure Room 1'],['8:50 AM','Consent','Procedure reviewed','Awaiting physician']]
  : p.id===3
  ? [['9:00 AM','Confirmed','Follow-up','Acne management'],['9:05 AM','Rooming','Medication review','Spironolactone'],['9:12 AM','Visit','Skin assessment','Face']]
- : [['10:00 AM','Confirmed','Full skin exam','High-risk surveillance'],['10:08 AM','Rooming','History reviewed','Prior SCC'],['10:15 AM','Exam','Total body skin exam','Scalp AKs noted']];
- document.getElementById('timeline').innerHTML=data.map(x=>`<div class="timeline-item"><div class="time">${x[0]}</div><div><div class="name">${x[1]}</div><div class="small">${x[2]} · ${x[3]}</div></div><span class="badge">${x[1]}</span></div>`).join('');
+ : p.id===4
+ ? [['10:00 AM','Confirmed','Full skin exam','High-risk surveillance'],['10:08 AM','Rooming','History reviewed','Prior SCC'],['10:15 AM','Exam','Total body skin exam','Scalp AKs noted']]
+ : [];
+ const timelineEl=document.getElementById('timeline');
+ if(!data.length){ timelineEl.innerHTML='<div class="small" style="padding:8px 0">No activity recorded yet for this patient today.</div>'; return; }
+ timelineEl.innerHTML=data.map(x=>`<div class="timeline-item"><div class="time">${x[0]}</div><div><div class="name">${x[1]}</div><div class="small">${x[2]} · ${x[3]}</div></div><span class="badge">${x[1]}</span></div>`).join('');
 }
 function renderAppointments(){
- document.getElementById('apptRows').innerHTML=appointments.map((a,i)=>`<tr>
-  <td><button class="btn ghost" style="padding:7px 9px" onclick="switchPatient(${a[0]})">${a[1]}</button></td>
-  <td>${a[2]}</td><td>${a[3]}</td><td><b>${a[4]}</b><div class="small">${a[5]}</div></td><td>${a[6]}</td><td>${a[7]}</td>
-  <td><select class="status-select" onchange="appointments[${i}][8]=this.value;toast('Status updated')">
-   ${['Pending','Confirmed','Arrived','Checked In','Checked Out','No Show','Cancelled'].map(s=>`<option ${s===a[8]?'selected':''}>${s}</option>`).join('')}
-  </select></td></tr>`).join('');
+ const rows=DB.appointments.list();
+ document.getElementById('apptRows').innerHTML=rows.map(a=>{
+  const c=DB.customers.get(a.customerId);
+  const provider=DB.users.get(a.providerId);
+  const name=c?`${c.firstName} ${c.lastName}`:'Unknown';
+  return `<tr>
+   <td><button class="btn ghost" style="padding:7px 9px" onclick="switchPatient(${a.customerId})">${name}</button></td>
+   <td>${isoDateToUS(a.date)}</td><td>${formatTime(a.time)}</td>
+   <td><b>${a.type}</b><div class="small">${a.site||''}</div></td>
+   <td>${displayProviderName(provider)}</td><td>${a.facility}</td>
+   <td><select class="status-select" onchange="updateAppointmentStatus(${a.id},this.value)">
+    ${['Pending','Confirmed','Arrived','Checked In','Checked Out','No Show','Cancelled'].map(s=>`<option ${s===a.status?'selected':''}>${s}</option>`).join('')}
+   </select></td>
+   <td><button class="btn ghost" onclick="deleteAppointment(${a.id})">Delete</button></td>
+  </tr>`;
+ }).join('');
+}
+function updateAppointmentStatus(id,status){
+ DB.appointments.update(id,{status});
+ toast('Status updated');
+}
+function deleteAppointment(id){
+ DB.appointments.remove(id);
+ renderAppointments();
+ toast('Appointment deleted');
 }
 function renderSites(){
- document.getElementById('siteCountBadge').textContent=sites.length+' tracked';
- document.getElementById('siteList').innerHTML=sites.map(s=>`<div class="site-item ${s.id===selectedSite?'active':''}" onclick="selectSite(${s.id})">
-   <div class="title">${s.title}</div><div class="small">${s.dx} · ${s.size}</div><div style="margin-top:7px"><span class="badge ${s.status.includes('Mohs')?'warn':s.status==='Treated'?'ok':''}">${s.status}</span></div>
+ const list=DB.skinSitesForCustomer(currentPatientId);
+ document.getElementById('siteCountBadge').textContent=list.length+' tracked';
+ document.getElementById('siteList').innerHTML=list.map(s=>`<div class="site-item ${s.id===selectedSite?'active':''}" onclick="selectSite(${s.id})">
+   <div class="title">${s.title}</div><div class="small">${s.diagnosis} · ${s.sizeMm?s.sizeMm+' mm':'—'}</div><div style="margin-top:7px"><span class="badge ${s.status==='active'?'warn':s.status==='treated'?'ok':''}">${s.status}</span></div>
  </div>`).join('');
- const s=sites.find(x=>x.id===selectedSite);
- document.getElementById('siteDetail').innerHTML=`<div class="clinical-card card" style="box-shadow:none">
+ const detailEl=document.getElementById('siteDetail');
+ const s=list.find(x=>x.id===selectedSite);
+ if(!s){ detailEl.innerHTML='<div class="small" style="padding:8px 0">No skin sites tracked for this patient yet.</div>'; return; }
+ detailEl.innerHTML=`<div class="clinical-card card" style="box-shadow:none">
    <div class="head"><h3>${s.title}</h3><button class="btn ghost" onclick="toast('Edit site placeholder')">Edit</button></div>
-   <div class="clinical-row"><div class="k">Diagnosis</div><div class="v">${s.dx}</div></div>
-   <div class="clinical-row"><div class="k">Size</div><div class="v">${s.size}</div></div>
-   <div class="clinical-row"><div class="k">Biopsy</div><div class="v">${s.biopsy}</div></div>
+   <div class="clinical-row"><div class="k">Diagnosis</div><div class="v">${s.diagnosis}</div></div>
+   <div class="clinical-row"><div class="k">Size</div><div class="v">${s.sizeMm?s.sizeMm+' mm':'—'}</div></div>
+   <div class="clinical-row"><div class="k">Biopsy</div><div class="v">${s.biopsyDate?isoDateToUS(s.biopsyDate):'—'}</div></div>
    <div class="clinical-row"><div class="k">Status</div><div class="v">${s.status}</div></div>
    ${s.procedure?`<div class="clinical-row"><div class="k">Suggested Procedure</div><div class="v">${s.procedure}</div></div>`:''}
    <div class="clinical-row"><div class="k">Marker Size</div><div class="v" style="width:130px"><input type="range" min="1" max="10" value="${s.sizeStep||4}" oninput="resizeSite(${s.id},this.value)" style="width:100%"></div></div>
-   <div class="small" style="margin-top:10px">${s.history}</div>
-   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" onclick="toast('Photos placeholder')">Photos</button><button class="btn primary" onclick="navigate('procedure')">Procedure</button></div>
+   <div class="small" style="margin-top:10px">${s.notes||''}</div>
+   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" onclick="toast('Photos placeholder')">Photos</button><button class="btn" onclick="deleteSite(${s.id})">Delete</button><button class="btn primary" onclick="navigate('procedure')">Procedure</button></div>
  </div>`;
 }
 function selectSite(id){
  selectedSite=id;
- const s=sites.find(x=>x.id===id);
+ const s=DB.skinSites.get(id);
  if(s && s.view && s.view!==currentBodyView){
   currentBodyView=s.view;
   document.querySelectorAll('.body-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.view===currentBodyView));
@@ -766,18 +873,59 @@ function setBodyTab(btn){
   toast(btn.textContent+' anatomical view — coming soon');
  }
 }
-function updateNote(){
- const c=document.getElementById('chief').value, e=document.getElementById('exam').value, p=document.getElementById('procedureType').value,
+
+let currentNoteId=null, currentNoteStatus=null;
+function currentNoteFor(customerId){
+ const appt=todaysAppointmentFor(customerId);
+ const notes=DB.visitNotesForCustomer(customerId);
+ if(appt){
+  const linked=notes.find(n=>n.appointmentId===appt.id);
+  if(linked) return linked;
+ }
+ return notes.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt))[0] || null;
+}
+function loadNoteForm(){
+ const p=getPatient();
+ const note=currentNoteFor(p.customerId);
+ currentNoteId = note?note.id:null;
+ currentNoteStatus = note?note.status:null;
+ document.getElementById('chief').value = note?.chiefComplaint ?? '';
+ document.getElementById('exam').value = note?.exam ?? '';
+ if(note?.procedure) document.getElementById('procedureType').value = note.procedure;
+ document.getElementById('stageMargin').value = note?.stageMargin ?? '';
+ document.getElementById('repair').value = note?.repair ?? '';
+ document.getElementById('followup').value = note?.followUp ?? '';
+}
+function updateNote(silent){
+ const p=getPatient();
+ const c=document.getElementById('chief').value, e=document.getElementById('exam').value, proc=document.getElementById('procedureType').value,
  sm=document.getElementById('stageMargin').value, r=document.getElementById('repair').value, f=document.getElementById('followup').value;
+
+ if(currentNoteStatus==='signed'){
+  if(!silent) toast('Note is signed — this preview is not saved');
+ } else if(currentNoteId){
+  DB.visitNotes.update(currentNoteId, {chiefComplaint:c, exam:e, procedure:proc, stageMargin:sm, repair:r, followUp:f});
+ } else {
+  const appt=todaysAppointmentFor(p.customerId);
+  const created=DB.visitNotes.create({
+   customerId:p.customerId, appointmentId: appt?appt.id:null, skinSiteId: appt?(appt.skinSiteId||null):null,
+   authorId: appt?appt.providerId:null, noteType:'visit', status:'draft',
+   chiefComplaint:c, exam:e, assessment:'', procedure:proc, stageMargin:sm, repair:r, followUp:f,
+   version:1, supersedesId:null, signedAt:null
+  });
+  currentNoteId=created.id;
+  currentNoteStatus=created.status;
+ }
+
  document.getElementById('notePaper').innerHTML=`
-  <div style="display:flex;justify-content:space-between"><div><h1>The Skin Cancer Center</h1><div class="small">Visit Note · August 28, 2026</div></div><div style="text-align:right;font-weight:800">${getPatient().name}<div class="small">DOB ${getPatient().dob}</div></div></div>
+  <div style="display:flex;justify-content:space-between"><div><h1>The Skin Cancer Center</h1><div class="small">Visit Note · ${p.appt!=='—'?p.appt:'Undated'}</div></div><div style="text-align:right;font-weight:800">${p.name}<div class="small">DOB ${p.dob}</div></div></div>
   <h2>Chief Complaint</h2><p>${c}</p>
   <h2>History / Exam</h2><p>${e}</p>
-  <h2>Assessment</h2><p>Biopsy-proven basal cell carcinoma of the left temple.</p>
-  <h2>Procedure</h2><p>${p} was performed after informed consent. ${sm}. Hemostasis was achieved and the defect was repaired with ${r.toLowerCase()}.</p>
+  <h2>Assessment</h2><p>${p.dx&&p.dx!=='—'?`${p.dx}${p.site?' of the '+p.site.toLowerCase():''}.`:'Assessment pending.'}</p>
+  <h2>Procedure</h2><p>${proc} was performed after informed consent. ${sm}. Hemostasis was achieved and the defect was repaired with ${r.toLowerCase()}.</p>
   <h2>Plan</h2><p>Wound care instructions reviewed with the patient. ${f}.</p>
-  <h2>Dermatology Site</h2><p>Left temple · 9 mm · Basal Cell Carcinoma</p>
-  <div style="margin-top:35px;font-size:11px;color:#697784">PRELIMINARY · Prototype note generated from structured fields</div>`;
+  <h2>Dermatology Site</h2><p>${p.site||'—'} · ${p.size} · ${p.dx}</p>
+  <div style="margin-top:35px;font-size:11px;color:#697784">${currentNoteStatus==='signed'?'SIGNED':'PRELIMINARY'} · Prototype note generated from structured fields</div>`;
 }
 function fillSampleNote(){
  document.getElementById('chief').value='Basal cell carcinoma, left temple';
@@ -788,31 +936,241 @@ function fillSampleNote(){
  updateNote();
 }
 function renderThreads(){
- document.getElementById('threadList').innerHTML=threads.map(t=>`<div class="thread ${t.id===currentThread?'active':''}" onclick="currentThread=${t.id};renderThreads();renderChat()"><b>${t.name}</b><div class="small">${t.subject}</div></div>`).join('');
+ const rows=DB.messageThreads.list();
+ document.getElementById('threadList').innerHTML=rows.map(t=>{
+  const c=DB.customers.get(t.customerId);
+  const name=c?`${c.firstName} ${c.lastName}`:'Unknown';
+  return `<div class="thread ${t.id===currentThread?'active':''}" onclick="selectThread(${t.id})">
+   <div style="display:flex;justify-content:space-between;gap:6px;align-items:flex-start">
+    <div><b>${name}</b><div class="small">${t.subject}</div></div>
+    <button class="btn ghost" style="padding:3px 7px;font-size:11px" onclick="event.stopPropagation();deleteThread(${t.id})">✕</button>
+   </div>
+  </div>`;
+ }).join('');
 }
+function selectThread(id){ currentThread=id; renderThreads(); renderChat(); }
 function renderChat(){
- const t=threads.find(x=>x.id===currentThread);
- document.getElementById('chat').innerHTML=`<div><h3 style="margin:0">${t.name}</h3><div class="small">${t.subject}</div></div>
-  <div style="margin-top:14px">${t.msgs.map(m=>`<div class="bubble ${m[0]==='me'?'me':''}">${m[1]}</div>`).join('')}</div>
+ const chatEl=document.getElementById('chat');
+ const t=DB.messageThreads.get(currentThread);
+ if(!t){ chatEl.innerHTML='<div class="small">No message threads.</div>'; return; }
+ const c=DB.customers.get(t.customerId);
+ const msgs=DB.messagesForThread(t.id);
+ chatEl.innerHTML=`<div><h3 style="margin:0">${c?`${c.firstName} ${c.lastName}`:'Unknown'}</h3><div class="small">${t.subject}</div></div>
+  <div style="margin-top:14px">${msgs.map(m=>`<div class="bubble ${m.direction==='outbound'?'me':''}">${m.body}</div>`).join('')}</div>
   <div class="compose"><input id="reply" placeholder="Write a reply..."><button class="btn primary" onclick="sendReply()">Send</button></div>`;
 }
 function sendReply(){
- const i=document.getElementById('reply');if(!i.value.trim())return;
- threads.find(x=>x.id===currentThread).msgs.push(['me',i.value.trim()]);renderChat();toast('Message added to mock thread');
+ const i=document.getElementById('reply');if(!i||!i.value.trim())return;
+ DB.sendMessage(currentThread, {body:i.value.trim(), senderType:'staff', senderId:CURRENT_USER_ID, direction:'outbound'});
+ renderChat();
+ toast('Message sent');
 }
-function openNew(){document.getElementById('newModal').classList.add('open')}
+function deleteThread(id){
+ DB.messages.list(m=>m.threadId===id).forEach(m=>DB.messages.remove(m.id));
+ DB.messageThreads.remove(id);
+ if(currentThread===id){
+  const remaining=DB.messageThreads.list();
+  currentThread = remaining.length ? remaining[0].id : null;
+ }
+ renderThreads();
+ renderChat();
+ toast('Thread deleted');
+}
+function populateNewModal(){
+ const patientSel=document.getElementById('newPatient');
+ patientSel.innerHTML=DB.customers.list().map(c=>`<option value="${c.id}">${c.firstName} ${c.lastName}</option>`).join('');
+ patientSel.value=String(currentPatientId);
+ const typeSel=document.getElementById('newApptType');
+ typeSel.innerHTML=Object.keys(workflowLibrary).map(t=>`<option>${t}</option>`).join('')+'<option>Suture Removal</option>';
+ const provSel=document.getElementById('newApptProvider');
+ provSel.innerHTML=DB.users.list(u=>u.active).map(u=>`<option value="${u.id}">${displayProviderName(u)}</option>`).join('');
+ document.getElementById('newSite').value='';
+ document.getElementById('newNotes').value='';
+}
+function openNew(){
+ populateNewModal();
+ document.getElementById('newModal').classList.add('open');
+}
 function closeNew(){document.getElementById('newModal').classList.remove('open')}
+function saveNew(){
+ const kind=document.getElementById('newKind').value;
+ if(kind!=='Appointment'){
+  closeNew();
+  toast(kind+' creation isn\'t wired to the data model yet');
+  return;
+ }
+ const created=DB.appointments.create({
+  customerId:+document.getElementById('newPatient').value,
+  providerId:+document.getElementById('newApptProvider').value,
+  type:document.getElementById('newApptType').value,
+  site:document.getElementById('newSite').value.trim(),
+  date:document.getElementById('newDate').value,
+  time:document.getElementById('newTime').value,
+  facility:'SCCF Norwalk',
+  room:'',
+  status:'Pending',
+  notes:document.getElementById('newNotes').value.trim()
+ });
+ closeNew();
+ renderAppointments();
+ if(created.customerId===currentPatientId){ renderPatientContext(); renderProcedureState(); }
+ toast('Appointment created');
+}
+
+let editingCustomerId=null;
+function nextMrn(){
+ const nums=DB.customers.list().map(c=>parseInt(c.mrn,10)).filter(n=>!isNaN(n));
+ return String((nums.length?Math.max(...nums):101000)+1);
+}
+function openNewPatient(){
+ editingCustomerId=null;
+ document.getElementById('patientModalTitle').textContent='New Patient';
+ document.getElementById('npMrnRow').style.display='none';
+ document.getElementById('npFirst').value='';
+ document.getElementById('npLast').value='';
+ document.getElementById('npPreferred').value='';
+ document.getElementById('npSex').value='F';
+ document.getElementById('npDob').value='';
+ document.getElementById('npPhone').value='';
+ document.getElementById('npEmail').value='';
+ document.getElementById('npCity').value='';
+ document.getElementById('patientModal').classList.add('open');
+}
+function openEditPatient(){
+ const c=DB.customers.get(currentPatientId);
+ if(!c) return;
+ editingCustomerId=c.id;
+ document.getElementById('patientModalTitle').textContent='Edit Patient';
+ document.getElementById('npMrnRow').style.display='block';
+ document.getElementById('npMrn').value=c.mrn;
+ document.getElementById('npFirst').value=c.firstName;
+ document.getElementById('npLast').value=c.lastName;
+ document.getElementById('npPreferred').value=c.preferredName||'';
+ document.getElementById('npSex').value=c.sexAtBirth;
+ document.getElementById('npDob').value=c.dob;
+ document.getElementById('npPhone').value=c.phone||'';
+ document.getElementById('npEmail').value=c.email||'';
+ document.getElementById('npCity').value=c.city||'';
+ document.getElementById('patientModal').classList.add('open');
+}
+function closePatientModal(){ document.getElementById('patientModal').classList.remove('open'); }
+function savePatientModal(){
+ const firstName=document.getElementById('npFirst').value.trim();
+ const lastName=document.getElementById('npLast').value.trim();
+ const dob=document.getElementById('npDob').value;
+ if(!firstName||!lastName){ toast('First and last name are required'); return; }
+ if(!dob){ toast('Date of birth is required'); return; }
+ const payload={
+  firstName, lastName,
+  preferredName: document.getElementById('npPreferred').value.trim()||firstName,
+  sexAtBirth: document.getElementById('npSex').value,
+  dob,
+  phone: document.getElementById('npPhone').value.trim(),
+  email: document.getElementById('npEmail').value.trim(),
+  city: document.getElementById('npCity').value.trim()
+ };
+ if(editingCustomerId){
+  DB.customers.update(editingCustomerId, payload);
+  closePatientModal();
+  renderPatientSwitcher();
+  switchPatient(editingCustomerId);
+  toast('Patient updated');
+ } else {
+  const created=DB.customers.create({...payload, mrn:nextMrn(), status:'active', allergies:[], conditions:[], medications:[]});
+  closePatientModal();
+  renderPatientSwitcher();
+  switchPatient(created.id);
+  toast('Patient created — MRN '+created.mrn);
+ }
+}
+function deleteCurrentPatient(){
+ const c=DB.customers.get(currentPatientId);
+ if(!c) return;
+ if(DB.customers.list().length<=1){ toast('Cannot delete the only remaining patient'); return; }
+ if(!confirm(`Delete ${c.firstName} ${c.lastName}? This also removes their appointments, skin sites, visit notes, and message threads.`)) return;
+ const id=c.id;
+ DB.appointmentsForCustomer(id).forEach(a=>DB.appointments.remove(a.id));
+ DB.skinSitesForCustomer(id).forEach(s=>DB.skinSites.remove(s.id));
+ DB.visitNotesForCustomer(id).forEach(n=>DB.visitNotes.remove(n.id));
+ DB.threadsForCustomer(id).forEach(t=>{
+  DB.messages.list(m=>m.threadId===t.id).forEach(m=>DB.messages.remove(m.id));
+  DB.messageThreads.remove(t.id);
+ });
+ DB.customers.remove(id);
+ const next=DB.customers.list()[0];
+ renderAppointments();
+ renderThreads();
+ switchPatient(next.id);
+ toast('Patient deleted');
+}
+
+function openNewProvider(){
+ document.getElementById('pvFirst').value='';
+ document.getElementById('pvLast').value='';
+ document.getElementById('pvRole').value='physician';
+ document.getElementById('pvCredentials').value='';
+ document.getElementById('pvSpecialty').value='';
+ document.getElementById('pvEmail').value='';
+ document.getElementById('providerModal').classList.add('open');
+}
+function closeProviderModal(){ document.getElementById('providerModal').classList.remove('open'); }
+function saveNewProvider(){
+ const firstName=document.getElementById('pvFirst').value.trim();
+ const lastName=document.getElementById('pvLast').value.trim();
+ if(!firstName||!lastName){ toast('First and last name are required'); return; }
+ const created=DB.users.create({
+  firstName, lastName,
+  role: document.getElementById('pvRole').value,
+  credentials: document.getElementById('pvCredentials').value.trim(),
+  specialty: document.getElementById('pvSpecialty').value.trim(),
+  email: document.getElementById('pvEmail').value.trim(),
+  active: true
+ });
+ closeProviderModal();
+ toast(`${displayProviderName(created)} added`);
+}
+
 document.querySelectorAll('.rail-btn,.tab').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.view)));
 document.getElementById('newModal').addEventListener('click',e=>{if(e.target.id==='newModal')closeNew()});
 document.getElementById('siteModal').addEventListener('click',e=>{if(e.target.id==='siteModal')cancelPlacement()});
+document.getElementById('patientModal').addEventListener('click',e=>{if(e.target.id==='patientModal')closePatientModal()});
+document.getElementById('providerModal').addEventListener('click',e=>{if(e.target.id==='providerModal')closeProviderModal()});
 document.getElementById('search').addEventListener('input',e=>{
  const q=e.target.value.toLowerCase().trim();
  if(q.length<2)return;
- const p=patients.find(p=>p.name.toLowerCase().includes(q)||p.mrn.includes(q));
- if(p && p.id!==currentPatientId) switchPatient(p.id);
-}); 
+ const c=DB.customers.list().find(c=>`${c.firstName} ${c.lastName}`.toLowerCase().includes(q)||c.mrn.includes(q));
+ if(c && c.id!==currentPatientId) switchPatient(c.id);
+});
 
-renderPatientSwitcher();renderPatientContext();renderProcedureState();renderTimeline();renderAppointments();renderBodyMap();renderSites();renderThreads();renderChat();updateNote();
+async function boot(){
+ try {
+  await DB.init();
+ } catch(err){
+  console.error(err);
+  document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;max-width:560px;margin:60px auto;text-align:center">'
+   + '<h2>Could not load DermaOps data</h2>'
+   + '<p>This app loads its data from <code>/Data/*.json</code> via fetch, which browsers block when a page is opened directly from disk (file://).</p>'
+   + '<p>Serve this folder over HTTP instead, e.g. from the repo root: <code>npx serve .</code>, then open the App page through that server.</p>'
+   + '</div>';
+  return;
+ }
+ currentPatientId = DB.customers.list()[0]?.id ?? null;
+ selectedSite = DB.skinSitesForCustomer(currentPatientId)[0]?.id ?? null;
+ currentThread = DB.messageThreads.list()[0]?.id ?? null;
+ renderPatientSwitcher();
+ renderPatientContext();
+ renderProcedureState();
+ renderTimeline();
+ renderAppointments();
+ renderBodyMap();
+ renderSites();
+ renderThreads();
+ renderChat();
+ loadNoteForm();
+ updateNote(true);
+}
+boot();
+
 </script>
 </body>
 </html>

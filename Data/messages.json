@@ -1,0 +1,56 @@
+[
+  {
+    "id": 1,
+    "threadId": 1,
+    "direction": "outbound",
+    "senderType": "staff",
+    "senderId": 3,
+    "body": "Reminder: your Mohs surgery is scheduled for 8:00 AM today.",
+    "createdAt": "2026-08-28T07:30:00.000Z"
+  },
+  {
+    "id": 2,
+    "threadId": 1,
+    "direction": "inbound",
+    "senderType": "patient",
+    "senderId": 1,
+    "body": "Thank you. I am here now.",
+    "createdAt": "2026-08-28T08:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "threadId": 2,
+    "direction": "inbound",
+    "senderType": "patient",
+    "senderId": 2,
+    "body": "Is it normal for the wound to still bleed a little?",
+    "createdAt": "2026-08-27T15:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "threadId": 2,
+    "direction": "outbound",
+    "senderType": "staff",
+    "senderId": 3,
+    "body": "Please apply firm pressure for 20 minutes without checking the site.",
+    "createdAt": "2026-08-27T15:10:00.000Z"
+  },
+  {
+    "id": 5,
+    "threadId": 3,
+    "direction": "inbound",
+    "senderType": "patient",
+    "senderId": 3,
+    "body": "Can I get a refill of my spironolactone?",
+    "createdAt": "2026-08-26T13:00:00.000Z"
+  },
+  {
+    "id": 6,
+    "threadId": 3,
+    "direction": "outbound",
+    "senderType": "staff",
+    "senderId": 4,
+    "body": "We routed this to your care team for review.",
+    "createdAt": "2026-08-26T13:20:00.000Z"
+  }
+]
