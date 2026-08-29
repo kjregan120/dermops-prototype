@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>DermaOps V2</title>
+<style>
+:root{
+  --purple:#3c197d; --purple2:#5b2ea3; --purple3:#efe8fb;
+  --ink:#17212b; --muted:#687784; --bg:#f3f5f8; --panel:#fff; --line:#dfe4ea;
+  --ok:#2f7b50; --warn:#a66f19; --danger:#a74c4c; --cyan:#dff3f3; --shadow:0 14px 35px rgba(35,44,62,.08);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{min-height:100vh}
+.topbar{
+  position:sticky;top:0;z-index:50;background:linear-gradient(90deg,var(--purple),#2c105f);
+  color:#fff;display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.16)
+}
+.brand{font-weight:900;font-size:19px;letter-spacing:.2px;white-space:nowrap}
+.global-search{flex:0 1 300px;position:relative}
+.global-search input{width:100%;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.18);padding:10px 14px 10px 36px;border-radius:10px;outline:none}
+.global-search input::placeholder{color:#d9ccef}
+.global-search:before{content:"⌕";position:absolute;left:13px;top:6px;font-size:24px;color:#d9ccef}
+.top-actions{display:flex;gap:8px;margin-left:auto}
+.top-action{border:0;background:transparent;color:#eee7fb;border-radius:10px;padding:9px 10px;min-width:58px}
+.top-action:hover,.top-action.active{background:rgba(255,255,255,.13)}
+.top-action span{display:block;font-size:10px;margin-top:2px}
+.shell{display:grid;grid-template-columns:92px 1fr;min-height:calc(100vh - 58px)}
+.rail{
+  background:#fff;border-right:1px solid var(--line);padding:12px 8px;display:flex;flex-direction:column;gap:6px;
+  position:sticky;top:58px;height:calc(100vh - 58px);z-index:20
+}
+.rail button{border:0;background:#fff;padding:12px 6px;border-radius:12px;color:#596875;font-size:12px}
+.rail button .ico{font-size:21px;display:block;margin-bottom:3px}
+.rail button.active,.rail button:hover{background:var(--purple3);color:var(--purple);font-weight:800}
+.main{min-width:0}
+.patient-banner{
+  background:#fff;border-bottom:1px solid var(--line);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:58px;z-index:18
+}
+.patient-main h2{margin:0;font-size:20px}.patient-main .meta{font-size:12px;color:var(--muted);margin-top:3px}
+.patient-alerts{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:5px 9px;background:#edf1f5;font-size:11px;font-weight:800;color:#4d5c67}
+.badge.warn{background:#fbefd8;color:#8c641b}.badge.danger{background:#fae5e5;color:#9b3d3d}.badge.ok{background:#e5f3ea;color:#2f7b50}
+.btn{border:1px solid var(--line);background:#fff;border-radius:11px;padding:10px 13px;font-weight:800;color:var(--ink)}
+.btn.primary{background:var(--purple2);border-color:var(--purple2);color:#fff}
+.btn.ghost{background:#f7f8fa}
+.patient-tabs{display:flex;gap:8px;background:#fff;border-bottom:1px solid var(--line);padding:0 20px;overflow:auto;position:sticky;top:136px;z-index:17}
+.patient-tabs button{border:0;background:transparent;color:var(--muted);padding:13px 10px;font-weight:800;white-space:nowrap;border-bottom:3px solid transparent}
+.patient-tabs button.active{color:var(--purple);border-bottom-color:var(--purple)}
+.content{padding:18px 20px 32px;max-width:1500px;margin:auto}
+.view{display:none}.view.active{display:block}
+.grid{display:grid;grid-template-columns:330px 1fr;gap:16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.card h3{margin:0;font-size:16px}
+.side-stack{display:grid;gap:12px}
+.clinical-card{padding:14px}
+.clinical-card .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.clinical-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid #edf0f3}
+.clinical-row:first-of-type{border-top:0}
+.clinical-row .k{font-size:12px;color:var(--muted)} .clinical-row .v{font-size:13px;font-weight:800;text-align:right}
+.hero{padding:16px}
+.hero-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.hero-title{font-size:19px;font-weight:900}
+.hero-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.workflow{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:16px}
+.step{padding:11px 7px;border-radius:10px;background:#eef1f5;color:#6d7881;text-align:center;font-size:11px;font-weight:900}
+.step.done{background:#e1f1e7;color:#2d6f49}.step.current{background:var(--purple2);color:white}
+.quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
+.quick-btn{border:1px solid var(--line);background:#fff;border-radius:12px;min-height:74px;padding:12px;text-align:left}
+.quick-btn b{display:block;margin-bottom:5px}.quick-btn span{font-size:11px;color:var(--muted)}
+.section-title{display:flex;justify-content:space-between;align-items:center;margin:16px 0 10px}
+.section-title h3{margin:0}
+.timeline{display:grid;gap:9px}
+.timeline-item{display:grid;grid-template-columns:92px 1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:13px}
+.timeline-item .time{font-weight:900}.timeline-item .name{font-weight:900}.small{font-size:11px;color:var(--muted)}
+.appointments{padding:14px}
+.table-scroll{overflow-x:auto}
+.table{width:100%;min-width:560px;border-collapse:collapse}
+.table th,.table td{padding:11px 10px;border-bottom:1px solid #edf0f3;text-align:left;font-size:12px}
+.table th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.status-select{border:1px solid var(--line);padding:7px 9px;border-radius:9px;background:#fff}
+.body-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+.body-card{padding:14px}
+.body-tabs{display:flex;gap:7px;margin-bottom:10px}
+.body-tabs button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 10px;font-weight:800;font-size:12px}
+.body-tabs button.active{background:var(--purple3);color:var(--purple);border-color:#d7c5f3}
+.body-stage{min-height:560px;display:grid;place-items:center;border:1px solid var(--line);border-radius:14px;background:linear-gradient(#fcfdff,#f5f7fa);position:relative;overflow:hidden}
+.body-image-wrap{position:relative;width:min(300px,82%);margin:auto;user-select:none}
+.body-image{width:100%;display:block;pointer-events:none;-webkit-user-drag:none}
+.body-image-wrap.placing{cursor:crosshair}
+.body-markers{position:absolute;inset:0}
+.site-marker{position:absolute;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(20,20,30,.35);cursor:pointer;transition:box-shadow .15s;transform:translate(-50%,-50%)}
+.site-marker:hover{box-shadow:0 2px 12px rgba(20,20,30,.5)}
+.site-marker.selected{outline:3px solid var(--purple);outline-offset:2px}
+.site-marker.temp{border:3px dashed var(--purple2);background:rgba(91,46,163,.3)!important;pointer-events:none}
+.sex-toggle{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.sex-toggle button{border:0;background:#fff;padding:8px 12px;font-size:12px;font-weight:800;color:var(--muted);border-right:1px solid var(--line)}
+.sex-toggle button:last-child{border-right:0}
+.sex-toggle button.active{background:var(--purple3);color:var(--purple)}
+.marker-size-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.marker-size-row input[type=range]{flex:1}
+.site-panel{padding:14px}
+.site-list{display:grid;gap:10px;margin-top:12px}
+.site-item{border:1px solid var(--line);border-radius:13px;padding:12px;cursor:pointer}
+.site-item.active{border-color:#bda9e7;background:#f7f2ff}
+.site-item .title{font-weight:900}
+.note-layout{display:grid;grid-template-columns:420px 1fr;gap:16px}
+.form-card,.note-preview{padding:15px}
+.form-section{margin-bottom:14px}
+.form-section label{display:block;font-size:11px;color:var(--muted);font-weight:900;margin-bottom:6px}
+.form-section input,.form-section textarea,.form-section select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px}
+.note-paper{background:#fff;border:1px solid #d7dce2;border-radius:10px;padding:26px;min-height:640px;box-shadow:0 8px 24px rgba(30,40,55,.08)}
+.note-paper h1{font-size:20px;margin:0}.note-paper h2{font-size:13px;margin:22px 0 5px;text-transform:uppercase}.note-paper p{font-size:12px;line-height:1.55;margin:4px 0}
+.messages{display:grid;grid-template-columns:320px 1fr;gap:16px}
+.thread-list{padding:10px}.thread{padding:12px;border-radius:12px;cursor:pointer}.thread.active,.thread:hover{background:var(--purple3)}
+.chat{padding:15px;display:flex;flex-direction:column;min-height:560px}
+.bubble{max-width:74%;background:#eef1f4;padding:11px 13px;border-radius:14px;margin:6px 0;font-size:13px}.bubble.me{margin-left:auto;background:#e8dcfa}
+.compose{display:flex;gap:8px;margin-top:auto;padding-top:15px}.compose input{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px}
+.modal{position:fixed;inset:0;background:rgba(20,24,36,.4);display:none;align-items:center;justify-content:center;z-index:90;padding:18px}
+.modal.open{display:flex}.modal-card{width:min(560px,100%);background:#fff;border-radius:18px;padding:18px;box-shadow:0 30px 70px rgba(0,0,0,.2)}
+.modal-card h3{margin-top:0}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form-grid .full{grid-column:1/-1}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.mobile-bottom{display:none}
+.toast{position:fixed;right:18px;bottom:20px;background:#1d2330;color:#fff;padding:11px 14px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;z-index:100}
+@media(max-width:1050px){
+  .grid,.body-layout,.note-layout,.messages{grid-template-columns:1fr}
+  .quick-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:800px){
+  .topbar{padding:8px 10px}.brand{font-size:17px}.top-actions .top-action:nth-child(5),.top-actions .top-action:nth-child(6){display:none}
+  .shell{display:block}.rail{display:none}.patient-banner{top:55px;padding:10px 12px}.patient-tabs{top:133px;padding:0 12px}
+  .content{padding:12px 12px 80px}.grid{grid-template-columns:1fr}.workflow{grid-template-columns:repeat(4,1fr)}.quick-grid{grid-template-columns:1fr 1fr}
+  .timeline-item{grid-template-columns:74px 1fr}.timeline-item .btn{grid-column:2}
+  .body-stage{min-height:420px}
+  .mobile-bottom{display:grid;grid-template-columns:repeat(6,1fr);position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--line);z-index:60;padding-bottom:env(safe-area-inset-bottom)}
+  .mobile-bottom button{border:0;background:white;padding:9px 3px;font-size:10px;color:#667580}.mobile-bottom .ico{display:block;font-size:20px}
+}
+@media(max-width:480px){
+  .topbar{gap:8px}
+  .brand{font-size:15px}
+  .global-search{flex:1 1 50px;min-width:0}
+  .global-search input{padding:8px 10px 8px 30px;font-size:13px}
+  .global-search:before{left:9px;top:6px;font-size:18px}
+  .top-action{min-width:40px;padding:8px 5px}
+  .top-action span{display:none}
+  .top-actions .top-action:nth-child(4){display:none}
+  .section-title{flex-wrap:wrap;gap:8px}
+  .sex-toggle button{padding:7px 9px;font-size:11px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">DermaOps</div>
+    <div class="global-search"><input id="search" placeholder="Search patient, MRN, procedure..."></div>
+    <div class="top-actions">
+      <button class="top-action" onclick="navigate('overview')">⌂<span>Home</span></button>
+      <button class="top-action" onclick="navigate('procedure')">✚<span>Exam</span></button>
+      <button class="top-action" onclick="toast('Tasks module placeholder')">✓<span>Tasks</span></button>
+      <button class="top-action" onclick="toast('Rx module placeholder')">Rx<span>Rx</span></button>
+      <button class="top-action" onclick="navigate('messages')">✉<span>Messages</span></button>
+      <button class="top-action" onclick="toast('Help module placeholder')">?<span>Help</span></button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="rail">
+      <button class="rail-btn active" data-view="overview"><span class="ico">⌂</span>Overview</button>
+      <button class="rail-btn" data-view="appointments"><span class="ico">▦</span>Appointments</button>
+      <button class="rail-btn" data-view="bodymap"><span class="ico">◉</span>Body Map</button>
+      <button class="rail-btn" data-view="procedure"><span class="ico">✚</span>Exam</button>
+      <button class="rail-btn" data-view="visitnote"><span class="ico">▤</span>Visit Note</button>
+      <button class="rail-btn" data-view="messages"><span class="ico">✉</span>Messages</button>
+    </aside>
+
+    <main class="main">
+      <section class="patient-banner">
+        <div class="patient-main">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <h2 id="patientName">Jane Smith</h2>
+            <select id="patientSwitcher" class="status-select" onchange="switchPatient(+this.value)"></select>
+          </div>
+          <div class="meta" id="patientMeta">DOB 04/12/1968 · 58F · MRN 101284 · Wilton, CT</div>
+          <div class="patient-alerts" id="patientAlerts"></div>
+        </div>
+        <div><button class="btn primary" onclick="openNew()">＋ New</button></div>
+      </section>
+
+      <nav class="patient-tabs">
+        <button class="tab active" data-view="overview">Overview</button>
+        <button class="tab" data-view="appointments">Appointments</button>
+        <button class="tab" data-view="bodymap">Dermatology</button>
+        <button class="tab" data-view="procedure">Exam</button>
+        <button class="tab" data-view="visitnote">Visit Note</button>
+        <button class="tab" data-view="messages">Messages</button>
+      </nav>
+
+      <div class="content">
+        <section class="view active" id="overview">
+          <div class="grid">
+            <div class="side-stack" id="overviewClinical"></div>
+
+            <div>
+              <div class="card hero">
+                <div class="hero-head">
+                  <div><div class="hero-title" id="heroTitle">Mohs Surgery · Left Temple</div><div class="hero-sub" id="heroSub">Basal cell carcinoma · Dr. Maya Patel · Mohs 2</div></div>
+                  <span class="badge warn" id="heroBadge">In Progress</span>
+                </div>
+                <div class="workflow" id="overviewWorkflow"></div>
+                <div class="quick-grid">
+                  <button class="quick-btn" onclick="navigate('procedure')"><b>Open Exam</b><span>Advance stages and document findings</span></button>
+                  <button class="quick-btn" onclick="navigate('bodymap')"><b>Open Body Map</b><span>Review lesion location and skin history</span></button>
+                  <button class="quick-btn" onclick="navigate('visitnote')"><b>Visit Note</b><span>Structured note with live preview</span></button>
+                  <button class="quick-btn" onclick="navigate('messages')"><b>Patient Message</b><span>Send instructions or follow-up</span></button>
+                </div>
+              </div>
+
+              <div class="section-title"><h3>Today’s Patient Timeline</h3><button class="btn ghost" onclick="navigate('appointments')">View all</button></div>
+              <div class="card appointments">
+                <div class="timeline" id="timeline"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="appointments">
+          <div class="card appointments">
+            <div class="section-title" style="margin-top:0"><h3>Appointments</h3><button class="btn primary" onclick="openNew()">＋ Add Appointment</button></div>
+            <div class="table-scroll">
+              <table class="table">
+                <thead><tr><th>Patient</th><th>Date</th><th>Time</th><th>Type / Site</th><th>Provider</th><th>Facility</th><th>Status</th></tr></thead>
+                <tbody id="apptRows"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="bodymap">
+          <div class="body-layout">
+            <div class="card body-card">
+              <div class="section-title" style="margin-top:0">
+                <h3>Dermatology Body Map</h3>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="sex-toggle" id="sexToggle">
+                    <button data-sex="male" onclick="setSexOverride('male')">Male</button>
+                    <button data-sex="female" onclick="setSexOverride('female')">Female</button>
+                  </div>
+                  <button class="btn primary" id="addSiteBtn" onclick="toggleAddSiteMode()">＋ Add Site</button>
+                </div>
+              </div>
+              <div class="marker-size-row">
+                <label class="small" style="white-space:nowrap">Marker Size</label>
+                <input type="range" id="topSizeSlider" min="1" max="10" value="4" oninput="updateTempMarkerSize(this.value)">
+              </div>
+              <div class="body-tabs">
+                <button class="active" data-view="front" onclick="setBodyTab(this)">Front</button>
+                <button data-view="back" onclick="setBodyTab(this)">Back</button>
+                <button data-view="left" onclick="setBodyTab(this)">Left</button>
+                <button data-view="right" onclick="setBodyTab(this)">Right</button>
+              </div>
+              <div class="body-stage" id="bodyStage">
+                <div class="body-image-wrap" id="bodyImageWrap" onclick="handleBodyClick(event)">
+                  <img id="bodyImg" class="body-image" alt="Body map" draggable="false" onload="renderMarkers()">
+                  <div class="body-markers" id="bodyMarkers"></div>
+                </div>
+                <div class="small" style="position:absolute;bottom:12px" id="bodyStageCaption">Tap a marker to inspect the site</div>
+              </div>
+            </div>
+
+            <div class="card site-panel">
+              <div class="section-title" style="margin-top:0"><h3>Skin Sites</h3><span class="badge" id="siteCountBadge">3 tracked</span></div>
+              <div class="site-list" id="siteList"></div>
+              <div id="siteDetail" style="margin-top:14px"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="procedure">
+          <div class="card hero">
+            <div class="hero-head">
+              <div><div class="hero-title" id="procedureTitle">Mohs Surgery · Jane Smith</div><div class="hero-sub" id="procedureSub">Left temple · BCC · 9 mm · Dr. Maya Patel</div></div>
+              <span class="badge warn" id="procBadge">In Progress</span>
+            </div>
+            <div class="workflow" id="procWorkflow"></div>
+            <div class="quick-grid">
+              <button class="quick-btn" onclick="advanceProcedure()"><b>Advance Stage</b><span>Move to the next clinical step</span></button>
+              <button class="quick-btn" onclick="toast('Clinical photo placeholder opened')"><b>Add Clinical Photo</b><span>Attach pre/post procedure image</span></button>
+              <button class="quick-btn" onclick="toast('Rx queued for physician review')"><b>Create Prescription</b><span>Route medication for approval</span></button>
+              <button class="quick-btn" onclick="navigate('visitnote')"><b>Generate Note</b><span>Populate procedure documentation</span></button>
+            </div>
+            <div class="section-title"><h3>Current Stage</h3></div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px" id="procFieldsGrid"></div>
+          </div>
+        </section>
+
+        <section class="view" id="visitnote">
+          <div class="note-layout">
+            <div class="card form-card">
+              <div class="section-title" style="margin-top:0"><h3>Structured Visit Note</h3><button class="btn ghost" onclick="fillSampleNote()">Use Sample</button></div>
+              <div class="form-section"><label>Chief Complaint</label><input id="chief" value="Basal cell carcinoma, left temple"></div>
+              <div class="form-section"><label>Exam</label><textarea id="exam" rows="4">9 mm pearly papule on left temple at biopsy site.</textarea></div>
+              <div class="form-section"><label>Procedure</label><select id="procedureType"><option>Mohs Micrographic Surgery</option><option>Excision</option><option>Biopsy</option></select></div>
+              <div class="form-section"><label>Stage / Margin</label><input id="stageMargin" value="Stage 1 positive; Stage 2 clear"></div>
+              <div class="form-section"><label>Repair</label><input id="repair" value="Intermediate layered closure"></div>
+              <div class="form-section"><label>Follow Up</label><input id="followup" value="Return in 5 days for wound check"></div>
+              <button class="btn primary" style="width:100%" onclick="updateNote()">Update Preview</button>
+            </div>
+            <div class="card note-preview">
+              <div class="section-title" style="margin-top:0"><h3>Preview</h3><div><button class="btn ghost" onclick="toast('Print preview placeholder')">Print</button></div></div>
+              <div class="note-paper" id="notePaper"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="messages">
+          <div class="messages">
+            <div class="card thread-list" id="threadList"></div>
+            <div class="card chat" id="chat"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<nav class="mobile-bottom">
+  <button onclick="navigate('overview')"><span class="ico">⌂</span>Overview</button>
+  <button onclick="navigate('appointments')"><span class="ico">▦</span>Appts</button>
+  <button onclick="navigate('bodymap')"><span class="ico">◉</span>Derm</button>
+  <button onclick="navigate('procedure')"><span class="ico">✚</span>Exam</button>
+  <button onclick="navigate('visitnote')"><span class="ico">▤</span>Note</button>
+  <button onclick="navigate('messages')"><span class="ico">✉</span>Msgs</button>
+</nav>
+
+<div class="modal" id="newModal">
+  <div class="modal-card">
+    <h3>Create New</h3>
+    <div class="form-grid">
+      <div><label class="small">Type</label><select class="btn" style="width:100%"><option>Appointment</option><option>Procedure</option><option>Task</option><option>Prescription</option><option>Message</option></select></div>
+      <div><label class="small">Patient</label><input class="btn" style="width:100%" value="Jane Smith"></div>
+      <div><label class="small">Date</label><input class="btn" style="width:100%" type="date" value="2026-08-28"></div>
+      <div><label class="small">Time</label><input class="btn" style="width:100%" type="time" value="08:00"></div>
+      <div class="full"><label class="small">Notes</label><textarea class="btn" style="width:100%;min-height:90px" placeholder="Optional"></textarea></div>
+    </div>
+    <div class="modal-actions"><button class="btn" onclick="closeNew()">Cancel</button><button class="btn primary" onclick="closeNew();toast('Saved to mock data')">Save</button></div>
+  </div>
+</div>
+<div class="modal" id="siteModal">
+  <div class="modal-card">
+    <h3>New Skin Site</h3>
+    <div class="form-grid">
+      <div class="full"><label class="small">Label</label><input id="smLabel" class="btn" style="width:100%" placeholder="e.g. Right cheek lesion"></div>
+      <div class="full"><label class="small">Diagnosis</label>
+        <select id="smDx" class="btn" style="width:100%" onchange="onDxChange()"></select>
+      </div>
+      <div class="full"><label class="small">Procedure</label>
+        <select id="smProcedure" class="btn" style="width:100%" disabled><option value="">Select a diagnosis first</option></select>
+      </div>
+      <div class="full"><label class="small">Notes</label><textarea id="smNotes" class="btn" style="width:100%;min-height:80px" placeholder="Optional clinical notes"></textarea></div>
+    </div>
+    <div class="modal-actions"><button class="btn" onclick="cancelPlacement()">Cancel</button><button class="btn primary" onclick="confirmPlacement()">Save Site</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const workflowLibrary = {
+ 'Mohs Surgery': {
+   steps:['Scheduled','Arrived','Prepped','Stage 1','Pathology','Repair','Discharged'],
+   fields(p,idx){ return [
+     ['Stage', this.steps[idx]],
+     ['Margin', idx>=5?'Clear':idx>=3?'Positive':'Pending'],
+     ['Room', p.room],
+     ['Anesthetic', p.anesthetic]
+   ]; }
+ },
+ 'Excision': {
+   steps:['Scheduled','Arrived','Consent','Excision','Repair','Discharged'],
+   fields(p,idx){ return [
+     ['Stage', this.steps[idx]],
+     ['Margin Plan', p.marginPlan],
+     ['Room', p.room],
+     ['Anesthetic', p.anesthetic]
+   ]; }
+ },
+ 'Follow-up': {
+   steps:['Confirmed','Arrived','Rooming','Exam','Plan','Discharged'],
+   fields(p,idx){ return [
+     ['Stage', this.steps[idx]],
+     ['Assessment', p.assessment],
+     ['Room', p.room],
+     ['Provider', p.provider]
+   ]; }
+ },
+ 'Full Skin Exam': {
+   steps:['Confirmed','Arrived','Rooming','Exam','Assessment','Discharged'],
+   fields(p,idx){ return [
+     ['Stage', this.steps[idx]],
+     ['Findings', p.findings],
+     ['Room', p.room],
+     ['Provider', p.provider]
+   ]; }
+ }
+};
+function getWorkflow(p){ return workflowLibrary[p.procedure] || workflowLibrary['Mohs Surgery']; }
+
+const patients = [
+ {
+   id:1,name:'Jane Smith',dob:'04/12/1968',sex:'58F',mrn:'101284',city:'Wilton, CT',
+   allergy:'Penicillin',medical:[['Hypertension','Active'],['Diabetes','No']],
+   skin:[['BCC','Left temple · 2026'],['AK','Left forearm · treated']],
+   meds:[['Lisinopril','10 mg']],
+   headline:'Mohs Surgery · Left Temple',
+   sub:'Basal cell carcinoma · Dr. Maya Patel · Mohs 2',
+   procedure:'Mohs Surgery',site:'Left temple',dx:'BCC',size:'9 mm',appt:'Today · 8:00 AM',
+   procIndex:3,room:'Mohs 2',anesthetic:'Lidocaine + epi'
+ },
+ {
+   id:2,name:'Michael Jones',dob:'09/22/1974',sex:'51M',mrn:'101391',city:'Ridgefield, CT',
+   allergy:'None',medical:[['Hyperlipidemia','Active'],['Hypertension','Controlled']],
+   skin:[['Atypical nevus','Upper back · 2026'],['SCC','Right ear · 2023']],
+   meds:[['Atorvastatin','20 mg']],
+   headline:'Excision · Upper Back',
+   sub:'Atypical nevus · Dr. Maya Patel · Procedure Room 1',
+   procedure:'Excision',site:'Upper back',dx:'Atypical nevus',size:'7 mm',appt:'Today · 8:30 AM',
+   procIndex:2,room:'Procedure Room 1',anesthetic:'Lidocaine + epi',marginPlan:'3 mm planned'
+ },
+ {
+   id:3,name:'Sarah Williams',dob:'02/08/1986',sex:'40F',mrn:'101447',city:'Westport, CT',
+   allergy:'Sulfa',medical:[['Acne','Active'],['PCOS','History']],
+   skin:[['Acne','Face · active'],['Nevus','Left shoulder · observe']],
+   meds:[['Spironolactone','100 mg']],
+   headline:'Dermatology Follow-up',
+   sub:'Acne management · Dr. Green · Room 3',
+   procedure:'Follow-up',site:'Face',dx:'Acne',size:'—',appt:'Today · 9:00 AM',
+   procIndex:3,room:'Room 3',provider:'Dr. Green',assessment:'Improving'
+ },
+ {
+   id:4,name:'Robert Chen',dob:'11/17/1959',sex:'66M',mrn:'101502',city:'New Canaan, CT',
+   allergy:'Latex',medical:[['Type 2 Diabetes','Active'],['Hypertension','Active']],
+   skin:[['SCC','Left cheek · 2024'],['AK','Scalp · multiple']],
+   meds:[['Metformin','500 mg BID'],['Amlodipine','5 mg']],
+   headline:'Full Skin Examination',
+   sub:'High-risk surveillance · Dr. Green · Room 2',
+   procedure:'Full Skin Exam',site:'Full body',dx:'History of SCC',size:'—',appt:'Today · 10:00 AM',
+   procIndex:3,room:'Room 2',provider:'Dr. Green',findings:'Scalp AKs noted'
+ }
+];
+let currentPatientId=1;
+
+const sites=[
+ {id:1,title:'Left Temple',dx:'Basal Cell Carcinoma',size:'9 mm',status:'Mohs today',biopsy:'08/14/2026',history:'Biopsy confirmed nodular BCC.',x:0.60,y:0.075,sizeStep:6,view:'front'},
+ {id:2,title:'Right Shoulder',dx:'Atypical Nevus',size:'5 mm',status:'Observe',biopsy:'—',history:'Photographed for comparison.',x:0.26,y:0.17,sizeStep:4,view:'front'},
+ {id:3,title:'Left Forearm',dx:'Actinic Keratosis',size:'6 mm',status:'Treated',biopsy:'—',history:'Cryotherapy completed 07/09/2026.',x:0.80,y:0.47,sizeStep:4,view:'front'}
+];
+let selectedSite=1;
+
+function siteMarkerColor(s){
+ if(s.status.includes('Mohs'))return '#b14f52';
+ if(s.status==='Treated')return '#3f8a63';
+ return '#c58a2c';
+}
+function sizeStepToPx(step,refWidth){ return refWidth*(0.03+ (+step)*0.013); }
+
+const bodyImages = {
+ male:{front:'../Images/male_front.png',back:'../Images/male_back.png',left:'../Images/male_left.png',right:'../Images/male_right.png'},
+ female:{front:'../Images/female_front.png',back:'../Images/female_back.png',left:'../Images/female_left.png',right:'../Images/female_right.png'}
+};
+const bodyViews=['front','back','left','right'];
+let currentBodyView='front';
+let addSiteMode=false;
+let tempMarker=null;
+let sexOverride=null;
+function sexKeyOf(p){ if(sexOverride==='male'||sexOverride==='female') return sexOverride; return p.sex.slice(-1)==='M' ? 'male':'female'; }
+function syncSexToggle(){
+ const eff=sexKeyOf(getPatient());
+ document.querySelectorAll('#sexToggle button').forEach(b=>b.classList.toggle('active',b.dataset.sex===eff));
+}
+function setSexOverride(val){
+ sexOverride=val;
+ renderBodyMap();
+}
+
+const diagnosisCatalog=[
+ {name:'Acne Vulgaris',procedures:['Topical Therapy','Oral Medication','Extraction','Chemical Peel']},
+ {name:'Actinic Keratosis',procedures:['Cryotherapy','Topical Therapy','Photodynamic Therapy (PDT)','Curettage']},
+ {name:'Seborrheic Keratosis',procedures:['Cryotherapy','Curettage','Shave Removal']},
+ {name:'Melanocytic Nevus (Mole)',procedures:['Observation','Shave Biopsy','Excision']},
+ {name:'Atypical / Dysplastic Nevus',procedures:['Shave Biopsy','Punch Biopsy','Excision']},
+ {name:'Basal Cell Carcinoma',procedures:['Mohs Micrographic Surgery','Excision','Electrodesiccation & Curettage (ED&C)']},
+ {name:'Squamous Cell Carcinoma',procedures:['Mohs Micrographic Surgery','Excision','Radiation Therapy']},
+ {name:'Melanoma',procedures:['Wide Local Excision','Sentinel Lymph Node Biopsy','Referral to Oncology']},
+ {name:'Psoriasis',procedures:['Topical Therapy','Phototherapy','Biologic Therapy']},
+ {name:'Eczema / Atopic Dermatitis',procedures:['Topical Therapy','Oral Medication','Phototherapy']},
+ {name:'Rosacea',procedures:['Topical Therapy','Oral Medication','Laser Therapy']},
+ {name:'Contact Dermatitis',procedures:['Topical Therapy','Patch Testing','Avoidance Counseling']},
+ {name:'Epidermoid / Sebaceous Cyst',procedures:['Incision & Drainage','Excision']},
+ {name:'Wart (Verruca)',procedures:['Cryotherapy','Topical Therapy','Electrodesiccation & Curettage (ED&C)']},
+ {name:'Skin Tag (Acrochordon)',procedures:['Snip Excision','Cryotherapy','Electrodesiccation']},
+ {name:'Lentigo (Sun Spot)',procedures:['Cryotherapy','Laser Therapy','Observation']},
+ {name:'Dermatofibroma',procedures:['Observation','Excision']},
+ {name:'Tinea (Fungal Infection)',procedures:['Topical Antifungal','Oral Antifungal']},
+ {name:'Vitiligo',procedures:['Topical Therapy','Phototherapy','Referral to Specialist']},
+ {name:'Other / Unspecified',procedures:['Observation','Biopsy','Referral']}
+];
+function populateDxSelect(){
+ const sel=document.getElementById('smDx');
+ sel.innerHTML='<option value="">Select diagnosis…</option>'+diagnosisCatalog.map(d=>`<option value="${d.name}">${d.name}</option>`).join('');
+}
+function onDxChange(){
+ const dx=document.getElementById('smDx').value;
+ const procSel=document.getElementById('smProcedure');
+ const entry=diagnosisCatalog.find(d=>d.name===dx);
+ if(entry){
+  procSel.innerHTML='<option value="">Select procedure…</option>'+entry.procedures.map(p=>`<option value="${p}">${p}</option>`).join('');
+  procSel.disabled=false;
+ } else {
+  procSel.innerHTML='<option value="">Select a diagnosis first</option>';
+  procSel.disabled=true;
+ }
+}
+function openSiteModal(){
+ populateDxSelect();
+ document.getElementById('smLabel').value='';
+ document.getElementById('smNotes').value='';
+ document.getElementById('smProcedure').innerHTML='<option value="">Select a diagnosis first</option>';
+ document.getElementById('smProcedure').disabled=true;
+ document.getElementById('siteModal').classList.add('open');
+}
+function closeSiteModal(){ document.getElementById('siteModal').classList.remove('open'); }
+
+function renderBodyMap(){
+ const p=getPatient(), sk=sexKeyOf(p);
+ syncSexToggle();
+ const view = bodyViews.includes(currentBodyView) ? currentBodyView : 'front';
+ const src = bodyImages[sk][view];
+ const img = document.getElementById('bodyImg');
+ if(img.getAttribute('src')!==src){ img.src=src; }
+ renderMarkers();
+ document.getElementById('bodyStageCaption').textContent = addSiteMode
+  ? 'Tap the body to place a new site'
+  : 'Tap a marker to inspect the site';
+}
+
+function renderMarkers(){
+ const wrap=document.getElementById('bodyMarkers'), img=document.getElementById('bodyImg');
+ const rect={width:img.clientWidth,height:img.clientHeight};
+ if(!rect.width){ return; }
+ const visible = sites.filter(s=>s.view===currentBodyView);
+ let html = visible.map(s=>{
+   const d = sizeStepToPx(s.sizeStep||4, rect.width);
+   return `<div class="site-marker ${s.id===selectedSite?'selected':''}" style="left:${(s.x*100).toFixed(2)}%;top:${(s.y*100).toFixed(2)}%;width:${d}px;height:${d}px;background:${siteMarkerColor(s)}" onclick="event.stopPropagation();selectSite(${s.id})"></div>`;
+ }).join('');
+ if(tempMarker && tempMarker.view===currentBodyView){
+   const d = sizeStepToPx(tempMarker.size, rect.width);
+   html += `<div class="site-marker temp" style="left:${(tempMarker.x*100).toFixed(2)}%;top:${(tempMarker.y*100).toFixed(2)}%;width:${d}px;height:${d}px"></div>`;
+ }
+ wrap.innerHTML = html;
+}
+window.addEventListener('resize',()=>{ if(document.getElementById('bodymap').classList.contains('active')) renderMarkers(); });
+
+function toggleAddSiteMode(){
+ addSiteMode=!addSiteMode;
+ document.getElementById('addSiteBtn').textContent = addSiteMode ? '✕ Cancel Add Site' : '＋ Add Site';
+ document.getElementById('bodyImageWrap').classList.toggle('placing',addSiteMode);
+ if(!addSiteMode) cancelPlacement(); else renderBodyMap();
+}
+function handleBodyClick(e){
+ if(!addSiteMode) return;
+ if(!bodyViews.includes(currentBodyView)){ toast('Switch to Front, Back, Left or Right to place a site'); return; }
+ const img=document.getElementById('bodyImg'), rect=img.getBoundingClientRect();
+ const x=(e.clientX-rect.left)/rect.width, y=(e.clientY-rect.top)/rect.height;
+ if(x<0||x>1||y<0||y>1) return;
+ tempMarker = {x,y,size:+document.getElementById('topSizeSlider').value,view:currentBodyView};
+ renderMarkers();
+ openSiteModal();
+}
+function updateTempMarkerSize(v){ if(tempMarker){ tempMarker.size=+v; renderMarkers(); } }
+function cancelPlacement(){
+ tempMarker=null;
+ closeSiteModal();
+ renderMarkers();
+}
+function confirmPlacement(){
+ if(!tempMarker){ toast('Tap the body to choose a location first'); return; }
+ const label=document.getElementById('smLabel').value.trim();
+ const dx=document.getElementById('smDx').value || 'Unspecified';
+ const procedure=document.getElementById('smProcedure').value;
+ const notes=document.getElementById('smNotes').value.trim();
+ const id=Math.max(0,...sites.map(s=>s.id))+1;
+ sites.push({id,title:label||dx||'New Site',dx,procedure,size:'—',status:'Observe',biopsy:'—',history:notes||'Added from body map.',x:tempMarker.x,y:tempMarker.y,sizeStep:tempMarker.size,view:tempMarker.view});
+ selectedSite=id;
+ tempMarker=null;
+ addSiteMode=false;
+ closeSiteModal();
+ document.getElementById('addSiteBtn').textContent='＋ Add Site';
+ document.getElementById('bodyImageWrap').classList.remove('placing');
+ renderBodyMap();
+ renderSites();
+ toast('Site added');
+}
+function resizeSite(id,val){
+ const s=sites.find(x=>x.id===id);
+ if(s){ s.sizeStep=+val; renderMarkers(); }
+}
+
+const appointments=[
+ [1,'Jane Smith','08/28/2026','8:00 AM','Mohs Surgery','Left temple','Dr. Patel','SCCF Norwalk','Arrived'],
+ [2,'Michael Jones','08/28/2026','8:30 AM','Excision','Upper back','Dr. Patel','SCCF Norwalk','Checked In'],
+ [3,'Sarah Williams','08/28/2026','9:00 AM','Follow-up','Face / acne','Dr. Green','SCCF Norwalk','Confirmed'],
+ [4,'Robert Chen','08/28/2026','10:00 AM','Full Skin Exam','Full body','Dr. Green','SCCF Norwalk','Confirmed'],
+ [1,'Jane Smith','09/08/2026','10:00 AM','Follow-up','Left temple','Dr. Patel','SCCF Norwalk','Confirmed'],
+ [1,'Jane Smith','09/22/2026','11:00 AM','Suture Removal','Left temple','Nurse Team','SCCF Norwalk','Pending']
+];
+const threads=[
+ {id:1,name:'Jane Smith',subject:'Surgery instructions',msgs:[['me','Reminder: your Mohs surgery is scheduled for 8:00 AM today.'],['them','Thank you. I am here now.']]},
+ {id:2,name:'Michael Jones',subject:'Post-op bleeding question',msgs:[['them','Is it normal for the wound to still bleed a little?'],['me','Please apply firm pressure for 20 minutes without checking the site.']]},
+ {id:3,name:'Sarah Williams',subject:'Prescription refill',msgs:[['them','Can I get a refill of my spironolactone?'],['me','We routed this to your care team for review.']]}
+];
+let currentThread=1;
+
+function navigate(id){
+ document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelectorAll('.rail-btn,.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
+ window.scrollTo({top:0,behavior:'smooth'});
+ if(id==='bodymap') renderMarkers();
+}
+function toast(msg){
+ const t=document.getElementById('toast');t.textContent=msg;t.style.opacity=1;
+ clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.style.opacity=0,1700);
+}
+
+function getPatient(){ return patients.find(p=>p.id===currentPatientId); }
+
+function renderPatientSwitcher(){
+ const s=document.getElementById('patientSwitcher');
+ s.innerHTML=patients.map(p=>`<option value="${p.id}" ${p.id===currentPatientId?'selected':''}>${p.name}</option>`).join('');
+}
+
+function renderPatientContext(){
+ const p=getPatient();
+ document.getElementById('patientName').textContent=p.name;
+ document.getElementById('patientMeta').textContent=`DOB ${p.dob} · ${p.sex} · MRN ${p.mrn} · ${p.city}`;
+ document.getElementById('patientAlerts').innerHTML=`
+   <span class="badge ${p.allergy==='None'?'ok':'danger'}">${p.allergy==='None'?'No known drug allergies':p.allergy+' allergy'}</span>
+   <span class="badge warn">${p.dx} · ${p.site}</span>
+   <span class="badge ok">${p.appt}</span>`;
+ document.getElementById('heroTitle').textContent=p.headline;
+ document.getElementById('heroSub').textContent=p.sub;
+ document.getElementById('procedureTitle').textContent=`${p.procedure} · ${p.name}`;
+ document.getElementById('procedureSub').textContent=`${p.site} · ${p.dx} · ${p.size} · ${p.sub.split('·')[1]?.trim() || 'Care Team'}`;
+ document.getElementById('overviewClinical').innerHTML=`
+   <div class="card clinical-card">
+     <div class="head"><h3>Drug Warnings</h3><span class="badge ${p.allergy==='None'?'ok':'danger'}">${p.allergy==='None'?0:1}</span></div>
+     <div class="clinical-row"><div class="k">Allergy</div><div class="v">${p.allergy}</div></div>
+   </div>
+   <div class="card clinical-card">
+     <div class="head"><h3>Medical History</h3><span class="small">Reviewed today</span></div>
+     ${p.medical.map(x=>`<div class="clinical-row"><div class="k">${x[0]}</div><div class="v">${x[1]}</div></div>`).join('')}
+   </div>
+   <div class="card clinical-card">
+     <div class="head"><h3>Skin History</h3><span class="badge warn">${p.skin.length}</span></div>
+     ${p.skin.map(x=>`<div class="clinical-row"><div class="k">${x[0]}</div><div class="v">${x[1]}</div></div>`).join('')}
+   </div>
+   <div class="card clinical-card">
+     <div class="head"><h3>Medications</h3></div>
+     ${p.meds.map(x=>`<div class="clinical-row"><div class="k">${x[0]}</div><div class="v">${x[1]}</div></div>`).join('')}
+   </div>`;
+}
+
+function switchPatient(id){
+ currentPatientId=id;
+ sexOverride=null;
+ renderPatientSwitcher();
+ renderPatientContext();
+ renderProcedureState();
+ renderTimeline();
+ renderBodyMap();
+ updateNote();
+ navigate('overview');
+ toast(getPatient().name+' loaded');
+}
+
+function renderWorkflow(target,steps,idx){
+ document.getElementById(target).innerHTML=steps.map((s,i)=>`<div class="step ${i<idx?'done':i===idx?'current':''}">${s}</div>`).join('');
+}
+function renderProcedureState(){
+ const p=getPatient(), wf=getWorkflow(p), idx=p.procIndex;
+ renderWorkflow('procWorkflow',wf.steps,idx);
+ renderWorkflow('overviewWorkflow',wf.steps,idx);
+ const done=idx===wf.steps.length-1;
+ const badgeClass=done?'ok':'warn', badgeText=done?'Completed':'In Progress';
+ const procBadge=document.getElementById('procBadge'); procBadge.className='badge '+badgeClass; procBadge.textContent=badgeText;
+ const heroBadge=document.getElementById('heroBadge'); heroBadge.className='badge '+badgeClass; heroBadge.textContent=badgeText;
+ document.getElementById('procFieldsGrid').innerHTML=wf.fields(p,idx).map(([label,value])=>
+  `<div class="clinical-card card" style="box-shadow:none"><div class="small">${label}</div><div style="font-weight:900;margin-top:5px">${value}</div></div>`).join('');
+}
+function advanceProcedure(){
+ const p=getPatient(), wf=getWorkflow(p);
+ if(p.procIndex<wf.steps.length-1)p.procIndex++;
+ renderProcedureState();
+ toast('Advanced to '+wf.steps[p.procIndex]);
+}
+function renderTimeline(){
+ const p=getPatient();
+ const data = p.id===1
+ ? [['8:00 AM','Arrived','Mohs surgery','Left temple · Mohs 2'],['8:22 AM','Prepped','Pre-op complete','Consent and site verified'],['8:46 AM','Stage 1','Tissue removed','Sent to lab'],['9:12 AM','Pathology','Positive margin','Additional stage required']]
+ : p.id===2
+ ? [['8:30 AM','Checked In','Excision','Upper back'],['8:42 AM','Roomed','Vitals complete','Procedure Room 1'],['8:50 AM','Consent','Procedure reviewed','Awaiting physician']]
+ : p.id===3
+ ? [['9:00 AM','Confirmed','Follow-up','Acne management'],['9:05 AM','Rooming','Medication review','Spironolactone'],['9:12 AM','Visit','Skin assessment','Face']]
+ : [['10:00 AM','Confirmed','Full skin exam','High-risk surveillance'],['10:08 AM','Rooming','History reviewed','Prior SCC'],['10:15 AM','Exam','Total body skin exam','Scalp AKs noted']];
+ document.getElementById('timeline').innerHTML=data.map(x=>`<div class="timeline-item"><div class="time">${x[0]}</div><div><div class="name">${x[1]}</div><div class="small">${x[2]} · ${x[3]}</div></div><span class="badge">${x[1]}</span></div>`).join('');
+}
+function renderAppointments(){
+ document.getElementById('apptRows').innerHTML=appointments.map((a,i)=>`<tr>
+  <td><button class="btn ghost" style="padding:7px 9px" onclick="switchPatient(${a[0]})">${a[1]}</button></td>
+  <td>${a[2]}</td><td>${a[3]}</td><td><b>${a[4]}</b><div class="small">${a[5]}</div></td><td>${a[6]}</td><td>${a[7]}</td>
+  <td><select class="status-select" onchange="appointments[${i}][8]=this.value;toast('Status updated')">
+   ${['Pending','Confirmed','Arrived','Checked In','Checked Out','No Show','Cancelled'].map(s=>`<option ${s===a[8]?'selected':''}>${s}</option>`).join('')}
+  </select></td></tr>`).join('');
+}
+function renderSites(){
+ document.getElementById('siteCountBadge').textContent=sites.length+' tracked';
+ document.getElementById('siteList').innerHTML=sites.map(s=>`<div class="site-item ${s.id===selectedSite?'active':''}" onclick="selectSite(${s.id})">
+   <div class="title">${s.title}</div><div class="small">${s.dx} · ${s.size}</div><div style="margin-top:7px"><span class="badge ${s.status.includes('Mohs')?'warn':s.status==='Treated'?'ok':''}">${s.status}</span></div>
+ </div>`).join('');
+ const s=sites.find(x=>x.id===selectedSite);
+ document.getElementById('siteDetail').innerHTML=`<div class="clinical-card card" style="box-shadow:none">
+   <div class="head"><h3>${s.title}</h3><button class="btn ghost" onclick="toast('Edit site placeholder')">Edit</button></div>
+   <div class="clinical-row"><div class="k">Diagnosis</div><div class="v">${s.dx}</div></div>
+   <div class="clinical-row"><div class="k">Size</div><div class="v">${s.size}</div></div>
+   <div class="clinical-row"><div class="k">Biopsy</div><div class="v">${s.biopsy}</div></div>
+   <div class="clinical-row"><div class="k">Status</div><div class="v">${s.status}</div></div>
+   ${s.procedure?`<div class="clinical-row"><div class="k">Suggested Procedure</div><div class="v">${s.procedure}</div></div>`:''}
+   <div class="clinical-row"><div class="k">Marker Size</div><div class="v" style="width:130px"><input type="range" min="1" max="10" value="${s.sizeStep||4}" oninput="resizeSite(${s.id},this.value)" style="width:100%"></div></div>
+   <div class="small" style="margin-top:10px">${s.history}</div>
+   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" onclick="toast('Photos placeholder')">Photos</button><button class="btn primary" onclick="navigate('procedure')">Procedure</button></div>
+ </div>`;
+}
+function selectSite(id){
+ selectedSite=id;
+ const s=sites.find(x=>x.id===id);
+ if(s && s.view && s.view!==currentBodyView){
+  currentBodyView=s.view;
+  document.querySelectorAll('.body-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.view===currentBodyView));
+  renderBodyMap();
+ } else {
+  renderMarkers();
+ }
+ renderSites();
+}
+function setBodyTab(btn){
+ document.querySelectorAll('.body-tabs button').forEach(b=>b.classList.remove('active'));
+ btn.classList.add('active');
+ const view=btn.dataset.view;
+ if(bodyViews.includes(view)){
+  currentBodyView=view;
+  renderBodyMap();
+ } else {
+  toast(btn.textContent+' anatomical view — coming soon');
+ }
+}
+function updateNote(){
+ const c=document.getElementById('chief').value, e=document.getElementById('exam').value, p=document.getElementById('procedureType').value,
+ sm=document.getElementById('stageMargin').value, r=document.getElementById('repair').value, f=document.getElementById('followup').value;
+ document.getElementById('notePaper').innerHTML=`
+  <div style="display:flex;justify-content:space-between"><div><h1>The Skin Cancer Center</h1><div class="small">Visit Note · August 28, 2026</div></div><div style="text-align:right;font-weight:800">${getPatient().name}<div class="small">DOB ${getPatient().dob}</div></div></div>
+  <h2>Chief Complaint</h2><p>${c}</p>
+  <h2>History / Exam</h2><p>${e}</p>
+  <h2>Assessment</h2><p>Biopsy-proven basal cell carcinoma of the left temple.</p>
+  <h2>Procedure</h2><p>${p} was performed after informed consent. ${sm}. Hemostasis was achieved and the defect was repaired with ${r.toLowerCase()}.</p>
+  <h2>Plan</h2><p>Wound care instructions reviewed with the patient. ${f}.</p>
+  <h2>Dermatology Site</h2><p>Left temple · 9 mm · Basal Cell Carcinoma</p>
+  <div style="margin-top:35px;font-size:11px;color:#697784">PRELIMINARY · Prototype note generated from structured fields</div>`;
+}
+function fillSampleNote(){
+ document.getElementById('chief').value='Basal cell carcinoma, left temple';
+ document.getElementById('exam').value='9 mm pearly papule at the prior biopsy site on the left temple.';
+ document.getElementById('stageMargin').value='Stage 1 positive; Stage 2 clear';
+ document.getElementById('repair').value='Intermediate layered closure';
+ document.getElementById('followup').value='Return in 5 days for wound check';
+ updateNote();
+}
+function renderThreads(){
+ document.getElementById('threadList').innerHTML=threads.map(t=>`<div class="thread ${t.id===currentThread?'active':''}" onclick="currentThread=${t.id};renderThreads();renderChat()"><b>${t.name}</b><div class="small">${t.subject}</div></div>`).join('');
+}
+function renderChat(){
+ const t=threads.find(x=>x.id===currentThread);
+ document.getElementById('chat').innerHTML=`<div><h3 style="margin:0">${t.name}</h3><div class="small">${t.subject}</div></div>
+  <div style="margin-top:14px">${t.msgs.map(m=>`<div class="bubble ${m[0]==='me'?'me':''}">${m[1]}</div>`).join('')}</div>
+  <div class="compose"><input id="reply" placeholder="Write a reply..."><button class="btn primary" onclick="sendReply()">Send</button></div>`;
+}
+function sendReply(){
+ const i=document.getElementById('reply');if(!i.value.trim())return;
+ threads.find(x=>x.id===currentThread).msgs.push(['me',i.value.trim()]);renderChat();toast('Message added to mock thread');
+}
+function openNew(){document.getElementById('newModal').classList.add('open')}
+function closeNew(){document.getElementById('newModal').classList.remove('open')}
+document.querySelectorAll('.rail-btn,.tab').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.view)));
+document.getElementById('newModal').addEventListener('click',e=>{if(e.target.id==='newModal')closeNew()});
+document.getElementById('siteModal').addEventListener('click',e=>{if(e.target.id==='siteModal')cancelPlacement()});
+document.getElementById('search').addEventListener('input',e=>{
+ const q=e.target.value.toLowerCase().trim();
+ if(q.length<2)return;
+ const p=patients.find(p=>p.name.toLowerCase().includes(q)||p.mrn.includes(q));
+ if(p && p.id!==currentPatientId) switchPatient(p.id);
+}); 
+
+renderPatientSwitcher();renderPatientContext();renderProcedureState();renderTimeline();renderAppointments();renderBodyMap();renderSites();renderThreads();renderChat();updateNote();
+</script>
+</body>
+</html>
