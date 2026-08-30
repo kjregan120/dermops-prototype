@@ -516,6 +516,7 @@ const CURRENT_USER_ID = 4; // logged-in support staff for this prototype (no aut
 let currentPatientId;
 let selectedSite;
 let currentThread;
+let editingMessageId=null;
 
 function siteMarkerColor(s){
  if(s.status==='active')return '#b14f52';
@@ -1005,22 +1006,63 @@ function renderThreads(){
   </div>`;
  }).join('');
 }
-function selectThread(id){ currentThread=id; renderThreads(); renderChat(); }
+function selectThread(id){ currentThread=id; editingMessageId=null; renderThreads(); renderChat(); }
 function renderChat(){
  const chatEl=document.getElementById('chat');
  const t=DB.messageThreads.get(currentThread);
  if(!t){ chatEl.innerHTML='<div class="small">No message threads.</div>'; return; }
  const c=DB.customers.get(t.customerId);
  const msgs=DB.messagesForThread(t.id);
+ const bubbles=msgs.map(m=>{
+  const align=m.direction==='outbound'?'flex-end':'flex-start';
+  return `<div style="display:flex;flex-direction:column;align-items:${align}">
+    <div class="bubble ${m.direction==='outbound'?'me':''}">${m.body}</div>
+    <div style="display:flex;gap:6px;margin:-2px 2px 6px">
+      <button class="btn ghost" style="padding:2px 6px;font-size:10px" onclick="startEditMessage(${m.id})">Edit</button>
+      <button class="btn ghost" style="padding:2px 6px;font-size:10px" onclick="deleteMessage(${m.id})">×</button>
+    </div>
+   </div>`;
+ }).join('');
+ const cancelBtn=editingMessageId?'<button class="btn ghost" onclick="cancelEditMessage()">Cancel</button>':'';
  chatEl.innerHTML=`<div><h3 style="margin:0">${c?`${c.firstName} ${c.lastName}`:'Unknown'}</h3><div class="small">${t.subject}</div></div>
-  <div style="margin-top:14px">${msgs.map(m=>`<div class="bubble ${m.direction==='outbound'?'me':''}">${m.body}</div>`).join('')}</div>
-  <div class="compose"><input id="reply" placeholder="Write a reply..."><button class="btn primary" onclick="sendReply()">Send</button></div>`;
+  <div style="margin-top:14px">${bubbles}</div>
+  <div class="compose">
+   <input id="reply" placeholder="Write a reply...">
+   ${cancelBtn}
+   <button class="btn primary" onclick="sendReply()">${editingMessageId?'Update':'Send'}</button>
+  </div>`;
+ if(editingMessageId){
+  const m=DB.messages.get(editingMessageId);
+  if(m) document.getElementById('reply').value=m.body;
+ }
+}
+function startEditMessage(id){
+ editingMessageId=id;
+ renderChat();
+ document.getElementById('reply')?.focus();
+}
+function cancelEditMessage(){
+ editingMessageId=null;
+ renderChat();
 }
 function sendReply(){
  const i=document.getElementById('reply');if(!i||!i.value.trim())return;
- DB.sendMessage(currentThread, {body:i.value.trim(), senderType:'staff', senderId:CURRENT_USER_ID, direction:'outbound'});
+ const body=i.value.trim();
+ if(editingMessageId){
+  DB.messages.update(editingMessageId, {body});
+  editingMessageId=null;
+  toast('Message updated');
+ } else {
+  DB.sendMessage(currentThread, {body, senderType:'staff', senderId:CURRENT_USER_ID, direction:'outbound'});
+  toast('Message sent');
+ }
  renderChat();
- toast('Message sent');
+}
+function deleteMessage(id){
+ DB.messages.remove(id);
+ if(editingMessageId===id) editingMessageId=null;
+ renderChat();
+ toast('Message deleted');
 }
 function deleteThread(id){
  DB.messages.list(m=>m.threadId===id).forEach(m=>DB.messages.remove(m.id));
@@ -1028,6 +1070,7 @@ function deleteThread(id){
  if(currentThread===id){
   const remaining=DB.messageThreads.list();
   currentThread = remaining.length ? remaining[0].id : null;
+  editingMessageId=null;
  }
  renderThreads();
  renderChat();
