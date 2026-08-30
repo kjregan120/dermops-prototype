@@ -321,12 +321,15 @@ button{cursor:pointer}
             <div class="workflow" id="procWorkflow"></div>
             <div class="quick-grid">
               <button class="quick-btn" onclick="advanceProcedure()"><b>Advance Stage</b><span>Move to the next clinical step</span></button>
-              <button class="quick-btn" onclick="toast('Clinical photo placeholder opened')"><b>Add Clinical Photo</b><span>Attach pre/post procedure image</span></button>
+              <button class="quick-btn" onclick="triggerPhotoUpload()"><b>Add Clinical Photo</b><span>Attach pre/post procedure image</span></button>
               <button class="quick-btn" onclick="toast('Rx queued for physician review')"><b>Create Prescription</b><span>Route medication for approval</span></button>
               <button class="quick-btn" onclick="navigate('visitnote')"><b>Generate Note</b><span>Populate procedure documentation</span></button>
             </div>
             <div class="section-title"><h3>Current Stage</h3></div>
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px" id="procFieldsGrid"></div>
+            <div class="section-title"><h3>Clinical Photos</h3></div>
+            <div id="examPhotoGallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px"></div>
+            <input type="file" id="examPhotoInput" accept="image/*" style="display:none" onchange="handleExamPhotoSelected(event)">
           </div>
         </section>
 
@@ -523,6 +526,14 @@ button{cursor:pointer}
       <div class="full"><label class="small">Findings</label><input id="exFindings" class="btn" style="width:100%" placeholder="Optional"></div>
     </div>
     <div class="modal-actions"><button class="btn" onclick="closeExamModal()">Cancel</button><button class="btn primary" onclick="saveExamModal()">Save</button></div>
+  </div>
+</div>
+<div class="modal" id="photoModal">
+  <div class="modal-card">
+    <h3 id="photoModalTitle">Add Clinical Photo</h3>
+    <img id="photoPreview" style="width:100%;max-height:280px;object-fit:contain;border-radius:10px;margin-bottom:12px;background:#f3f5f8">
+    <div class="form-section"><label class="small">Caption</label><input id="phCaption" class="btn" style="width:100%" placeholder="e.g. Pre-op, left temple"></div>
+    <div class="modal-actions"><button class="btn" onclick="closePhotoModal()">Cancel</button><button class="btn primary" onclick="savePhotoModal()">Save</button></div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -940,6 +951,7 @@ function renderProcedureState(){
  const heroBadge=document.getElementById('heroBadge'); heroBadge.className='badge '+badgeClass; heroBadge.textContent=badgeText;
  document.getElementById('procFieldsGrid').innerHTML=wf.fields(p,idx).map(([label,value])=>
   `<div class="clinical-card card" style="box-shadow:none"><div class="small">${label}</div><div style="font-weight:900;margin-top:5px">${value}</div></div>`).join('');
+ renderExamPhotos();
 }
 function advanceProcedure(){
  const p=getPatient(), wf=getWorkflow(p);
@@ -987,11 +999,107 @@ function deleteExam(){
  const p=getPatient();
  if(!p.scheduleId){ toast('No active exam to delete'); return; }
  if(!confirm('Delete this exam? This removes the appointment from the schedule entirely.')) return;
+ DB.imagesForSchedule(p.scheduleId).forEach(img=>DB.clinicalImages.remove(img.id));
  DB.schedule.remove(p.scheduleId);
  renderPatientContext();
  renderProcedureState();
  renderSchedule();
  toast('Exam deleted');
+}
+
+let editingPhotoId=null;
+let pendingPhotoDataUrl=null;
+function triggerPhotoUpload(){
+ const p=getPatient();
+ if(!p.scheduleId){ toast('No active exam to attach a photo to'); return; }
+ document.getElementById('examPhotoInput').click();
+}
+function handleExamPhotoSelected(e){
+ const file=e.target.files[0];
+ e.target.value='';
+ if(!file) return;
+ if(!file.type.startsWith('image/')){ toast('Please choose an image file'); return; }
+ const reader=new FileReader();
+ reader.onload=()=>{
+  const img=new Image();
+  img.onerror=()=>toast('Could not read that image file');
+  img.onload=()=>{
+   const maxW=800;
+   const scale=Math.min(1, maxW/img.width);
+   const canvas=document.createElement('canvas');
+   canvas.width=Math.round(img.width*scale);
+   canvas.height=Math.round(img.height*scale);
+   canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+   pendingPhotoDataUrl=canvas.toDataURL('image/jpeg',0.8);
+   editingPhotoId=null;
+   document.getElementById('photoModalTitle').textContent='Add Clinical Photo';
+   document.getElementById('photoPreview').src=pendingPhotoDataUrl;
+   document.getElementById('phCaption').value='';
+   document.getElementById('photoModal').classList.add('open');
+  };
+  img.src=reader.result;
+ };
+ reader.readAsDataURL(file);
+}
+function editExamPhotoCaption(id){
+ const rec=DB.clinicalImages.get(id);
+ if(!rec) return;
+ editingPhotoId=id;
+ pendingPhotoDataUrl=null;
+ document.getElementById('photoModalTitle').textContent='Edit Photo';
+ document.getElementById('photoPreview').src=rec.dataUrl;
+ document.getElementById('phCaption').value=rec.caption||'';
+ document.getElementById('photoModal').classList.add('open');
+}
+function closePhotoModal(){
+ document.getElementById('photoModal').classList.remove('open');
+ pendingPhotoDataUrl=null;
+ editingPhotoId=null;
+}
+function savePhotoModal(){
+ const caption=document.getElementById('phCaption').value.trim();
+ const p=getPatient();
+ if(editingPhotoId){
+  DB.clinicalImages.update(editingPhotoId, {caption});
+  closePhotoModal();
+  renderExamPhotos();
+  toast('Photo updated');
+  return;
+ }
+ if(!pendingPhotoDataUrl || !p.scheduleId){ closePhotoModal(); return; }
+ try{
+  DB.clinicalImages.create({
+   customerId:p.customerId, scheduleId:p.scheduleId, skinSiteId:p.skinSiteId||null,
+   caption, dataUrl:pendingPhotoDataUrl, takenBy:CURRENT_USER_ID
+  });
+  closePhotoModal();
+  renderExamPhotos();
+  toast('Photo added');
+ } catch(err){
+  closePhotoModal();
+  toast('Could not save photo — local storage limit reached. Try deleting an older photo first.');
+ }
+}
+function deleteExamPhoto(id){
+ if(!confirm('Delete this clinical photo?')) return;
+ DB.clinicalImages.remove(id);
+ renderExamPhotos();
+ toast('Photo deleted');
+}
+function renderExamPhotos(){
+ const p=getPatient();
+ const gallery=document.getElementById('examPhotoGallery');
+ if(!p.scheduleId){ gallery.innerHTML='<div class="small">No active exam to attach photos to.</div>'; return; }
+ const photos=DB.imagesForSchedule(p.scheduleId);
+ gallery.innerHTML = photos.length ? photos.map(ph=>`
+   <div class="card" style="padding:8px">
+     <img src="${ph.dataUrl}" style="width:100%;height:100px;object-fit:cover;border-radius:8px;display:block">
+     <div class="small" style="margin-top:6px;min-height:14px">${ph.caption||''}</div>
+     <div style="display:flex;gap:6px;margin-top:6px">
+       <button class="btn ghost" style="padding:3px 7px;font-size:11px;flex:1" onclick="editExamPhotoCaption(${ph.id})">Edit</button>
+       <button class="btn ghost" style="padding:3px 7px;font-size:11px;flex:1" onclick="deleteExamPhoto(${ph.id})">Delete</button>
+     </div>
+   </div>`).join('') : '<div class="small">No photos yet.</div>';
 }
 function renderTimeline(){
  const p=getPatient();
@@ -1117,6 +1225,7 @@ function updateScheduleStatus(id,status){
  toast('Status updated');
 }
 function deleteSchedule(id){
+ DB.imagesForSchedule(id).forEach(img=>DB.clinicalImages.remove(img.id));
  DB.schedule.remove(id);
  renderSchedule();
  renderPatientContext();
@@ -1467,7 +1576,7 @@ function deleteCurrentPatient(){
  const c=DB.customers.get(currentPatientId);
  if(!c) return;
  if(DB.customers.list().length<=1){ toast('Cannot delete the only remaining patient'); return; }
- if(!confirm(`Delete ${c.firstName} ${c.lastName}? This also removes their allergies, conditions, medications, schedule, skin sites, visit notes, and message threads.`)) return;
+ if(!confirm(`Delete ${c.firstName} ${c.lastName}? This also removes their allergies, conditions, medications, schedule, skin sites, visit notes, clinical photos, and message threads.`)) return;
  const id=c.id;
  DB.allergiesForCustomer(id).forEach(a=>DB.allergies.remove(a.id));
  DB.conditionsForCustomer(id).forEach(cn=>DB.conditions.remove(cn.id));
@@ -1475,6 +1584,7 @@ function deleteCurrentPatient(){
  DB.scheduleForCustomer(id).forEach(a=>DB.schedule.remove(a.id));
  DB.skinSitesForCustomer(id).forEach(s=>DB.skinSites.remove(s.id));
  DB.visitNotesForCustomer(id).forEach(n=>DB.visitNotes.remove(n.id));
+ DB.clinicalImages.list(img=>img.customerId===id).forEach(img=>DB.clinicalImages.remove(img.id));
  DB.threadsForCustomer(id).forEach(t=>{
   DB.messages.list(m=>m.threadId===t.id).forEach(m=>DB.messages.remove(m.id));
   DB.messageThreads.remove(t.id);
@@ -1655,6 +1765,7 @@ document.getElementById('allergyModal').addEventListener('click',e=>{if(e.target
 document.getElementById('conditionModal').addEventListener('click',e=>{if(e.target.id==='conditionModal')closeConditionModal()});
 document.getElementById('medicationModal').addEventListener('click',e=>{if(e.target.id==='medicationModal')closeMedicationModal()});
 document.getElementById('examModal').addEventListener('click',e=>{if(e.target.id==='examModal')closeExamModal()});
+document.getElementById('photoModal').addEventListener('click',e=>{if(e.target.id==='photoModal')closePhotoModal()});
 document.getElementById('search').addEventListener('input',e=>{
  const q=e.target.value.toLowerCase().trim();
  if(q.length<2)return;
