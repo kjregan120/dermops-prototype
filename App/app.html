@@ -305,6 +305,11 @@ button{cursor:pointer}
 
         <section class="view" id="visitnote">
           <div class="note-layout">
+            <div style="display:grid;gap:16px">
+              <div class="card form-card">
+                <div class="section-title" style="margin-top:0"><h3>Visit Notes</h3><button class="btn ghost" onclick="startNewNote()">+ New Note</button></div>
+                <div id="noteList"></div>
+              </div>
             <div class="card form-card">
               <div class="section-title" style="margin-top:0"><h3>Structured Visit Note</h3><button class="btn ghost" onclick="fillSampleNote()">Use Sample</button></div>
               <div class="form-section"><label>Chief Complaint</label><input id="chief" value="Basal cell carcinoma, left temple"></div>
@@ -314,6 +319,7 @@ button{cursor:pointer}
               <div class="form-section"><label>Repair</label><input id="repair" value="Intermediate layered closure"></div>
               <div class="form-section"><label>Follow Up</label><input id="followup" value="Return in 5 days for wound check"></div>
               <button class="btn primary" style="width:100%" onclick="updateNote()">Update Preview</button>
+            </div>
             </div>
             <div class="card note-preview">
               <div class="section-title" style="margin-top:0"><h3>Preview</h3><div><button class="btn ghost" onclick="toast('Print preview placeholder')">Print</button></div></div>
@@ -942,17 +948,58 @@ function currentNoteFor(customerId){
  }
  return notes.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt))[0] || null;
 }
-function loadNoteForm(){
- const p=getPatient();
- const note=currentNoteFor(p.customerId);
+function loadNoteIntoForm(note){
  currentNoteId = note?note.id:null;
  currentNoteStatus = note?note.status:null;
  document.getElementById('chief').value = note?.chiefComplaint ?? '';
  document.getElementById('exam').value = note?.exam ?? '';
  if(note?.procedure) document.getElementById('procedureType').value = note.procedure;
+ else document.getElementById('procedureType').selectedIndex = 0;
  document.getElementById('stageMargin').value = note?.stageMargin ?? '';
  document.getElementById('repair').value = note?.repair ?? '';
  document.getElementById('followup').value = note?.followUp ?? '';
+}
+function loadNoteForm(){
+ const p=getPatient();
+ loadNoteIntoForm(currentNoteFor(p.customerId));
+}
+function renderNoteList(){
+ const list=DB.visitNotesForCustomer(currentPatientId).slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
+ const el=document.getElementById('noteList');
+ if(!list.length){ el.innerHTML='<div class="small">No visit notes yet.</div>'; return; }
+ el.innerHTML=list.map(n=>{
+  const dateStr=isoDateToUS((n.signedAt||n.createdAt).slice(0,10));
+  const label=n.procedure||(n.noteType==='visit'?'Visit note':'Note');
+  const highlight=n.id===currentNoteId?'background:#f7f2ff;border-radius:8px':'';
+  return `<div class="clinical-row" style="${highlight};padding:9px 6px">
+    <div class="k">${dateStr} · ${label}</div>
+    <div class="v" style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+      <span class="badge ${n.status==='signed'?'ok':'warn'}">${n.status}</span>
+      <button class="btn ghost" style="padding:3px 7px;font-size:11px" onclick="editNote(${n.id})">Edit</button>
+      <button class="btn ghost" style="padding:3px 7px;font-size:11px" onclick="deleteNote(${n.id})">×</button>
+    </div>
+  </div>`;
+ }).join('');
+}
+function editNote(id){
+ const note=DB.visitNotes.get(id);
+ if(!note) return;
+ loadNoteIntoForm(note);
+ updateNote(true);
+}
+function startNewNote(){
+ loadNoteIntoForm(null);
+ updateNote(true);
+}
+function deleteNote(id){
+ const note=DB.visitNotes.get(id);
+ if(!note) return;
+ if(note.status==='signed'){ toast('Signed notes cannot be deleted — they are part of the permanent record'); return; }
+ if(!confirm('Delete this visit note? This cannot be undone.')) return;
+ DB.visitNotes.remove(id);
+ if(currentNoteId===id) loadNoteForm();
+ updateNote(true);
+ toast('Visit note deleted');
 }
 function updateNote(silent){
  const p=getPatient();
@@ -963,7 +1010,9 @@ function updateNote(silent){
   if(!silent) toast('Note is signed — this preview is not saved');
  } else if(currentNoteId){
   DB.visitNotes.update(currentNoteId, {chiefComplaint:c, exam:e, procedure:proc, stageMargin:sm, repair:r, followUp:f});
- } else {
+ } else if(!silent){
+  // Only persist a new note on an explicit save — silent calls (boot, patient
+  // switch, "+ New Note") must not write an empty draft just from viewing.
   const appt=todaysScheduleFor(p.customerId);
   const created=DB.visitNotes.create({
    customerId:p.customerId, scheduleId: appt?appt.id:null, skinSiteId: appt?(appt.skinSiteId||null):null,
@@ -975,6 +1024,7 @@ function updateNote(silent){
   currentNoteStatus=created.status;
  }
 
+ renderNoteList();
  document.getElementById('notePaper').innerHTML=`
   <div style="display:flex;justify-content:space-between"><div><h1>The Skin Cancer Center</h1><div class="small">Visit Note · ${p.appt!=='—'?p.appt:'Undated'}</div></div><div style="text-align:right;font-weight:800">${p.name}<div class="small">DOB ${p.dob}</div></div></div>
   <h2>Chief Complaint</h2><p>${c}</p>
