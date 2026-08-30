@@ -236,6 +236,29 @@ button{cursor:pointer}
         <section class="view" id="schedule">
           <div class="card schedule">
             <div class="section-title" style="margin-top:0"><h3>Schedule</h3><button class="btn primary" onclick="openNew()">＋ Add to Schedule</button></div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+              <div class="body-tabs" id="scheduleViewTabs">
+                <button class="active" data-gran="day" onclick="setScheduleGranularity('day')">Today</button>
+                <button data-gran="week" onclick="setScheduleGranularity('week')">This Week</button>
+                <button data-gran="month" onclick="setScheduleGranularity('month')">This Month</button>
+              </div>
+              <button class="btn ghost" id="scheduleFilterToggle" onclick="toggleScheduleFilters()">Filters ▾</button>
+            </div>
+
+            <div id="scheduleFilterPanel" style="display:none;margin-bottom:14px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#f7f8fa">
+              <div class="form-grid">
+                <div><label class="small">Date</label><input type="date" id="schedFilterDate" class="btn" style="width:100%" onchange="setScheduleAnchor(this.value)"></div>
+                <div><label class="small">Patient</label><select id="schedFilterPatient" class="btn" style="width:100%" onchange="applyScheduleFilters()"></select></div>
+                <div><label class="small">Provider</label><select id="schedFilterProvider" class="btn" style="width:100%" onchange="applyScheduleFilters()"></select></div>
+                <div><label class="small">Facility</label><select id="schedFilterFacility" class="btn" style="width:100%" onchange="applyScheduleFilters()"></select></div>
+                <div><label class="small">Status</label><select id="schedFilterStatus" class="btn" style="width:100%" onchange="applyScheduleFilters()"></select></div>
+                <div style="display:flex;align-items:flex-end"><button class="btn ghost" style="width:100%" onclick="resetScheduleFilters()">Clear Filters</button></div>
+              </div>
+            </div>
+
+            <div class="small" id="scheduleRangeLabel" style="margin-bottom:10px;color:var(--muted)"></div>
+
             <div class="table-scroll">
               <table class="table">
                 <thead><tr><th>Patient</th><th>Date</th><th>Time</th><th>Type / Site</th><th>Provider</th><th>Facility</th><th>Status</th><th>Actions</th></tr></thead>
@@ -528,6 +551,10 @@ const workflowLibrary = {
 function getWorkflow(p){ return workflowLibrary[p.procedure] || workflowLibrary['Mohs Surgery']; }
 
 const TODAY = '2026-08-28';
+let scheduleGranularity='day';
+let scheduleAnchorDate=TODAY;
+let scheduleFiltersVisible=false;
+let scheduleFilters={patientId:null, providerId:null, facility:null, status:null};
 const CURRENT_USER_ID = 4; // logged-in support staff for this prototype (no auth yet)
 
 let currentPatientId;
@@ -919,9 +946,95 @@ function renderTimeline(){
  if(!data.length){ timelineEl.innerHTML='<div class="small" style="padding:8px 0">No activity recorded yet for this patient today.</div>'; return; }
  timelineEl.innerHTML=data.map(x=>`<div class="timeline-item"><div class="time">${x[0]}</div><div><div class="name">${x[1]}</div><div class="small">${x[2]} · ${x[3]}</div></div><span class="badge">${x[1]}</span></div>`).join('');
 }
+const SCHEDULE_STATUSES=['Pending','Confirmed','Arrived','Checked In','Checked Out','No Show','Cancelled'];
+
+function parseISODate(iso){ const [y,m,d]=iso.split('-').map(Number); return new Date(y,m-1,d); }
+function toISODate(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function scheduleDateRange(){
+ const anchor=parseISODate(scheduleAnchorDate);
+ if(scheduleGranularity==='day'){
+  return [toISODate(anchor), toISODate(anchor)];
+ }
+ if(scheduleGranularity==='week'){
+  const start=new Date(anchor); start.setDate(start.getDate()-start.getDay());
+  const end=new Date(start); end.setDate(start.getDate()+6);
+  return [toISODate(start), toISODate(end)];
+ }
+ const start=new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+ const end=new Date(anchor.getFullYear(), anchor.getMonth()+1, 0);
+ return [toISODate(start), toISODate(end)];
+}
+function setScheduleGranularity(g){
+ scheduleGranularity=g;
+ scheduleAnchorDate=TODAY;
+ document.querySelectorAll('#scheduleViewTabs button').forEach(b=>b.classList.toggle('active', b.dataset.gran===g));
+ document.getElementById('schedFilterDate').value=TODAY;
+ renderSchedule();
+}
+function setScheduleAnchor(dateStr){
+ if(!dateStr) return;
+ scheduleAnchorDate=dateStr;
+ renderSchedule();
+}
+function toggleScheduleFilters(){
+ scheduleFiltersVisible=!scheduleFiltersVisible;
+ document.getElementById('scheduleFilterPanel').style.display=scheduleFiltersVisible?'block':'none';
+ document.getElementById('scheduleFilterToggle').textContent=scheduleFiltersVisible?'Filters ▴':'Filters ▾';
+}
+function populateScheduleFilterOptions(){
+ const patientSel=document.getElementById('schedFilterPatient');
+ const curPatient=patientSel.value;
+ patientSel.innerHTML='<option value="">All Patients</option>'+DB.customers.list().map(c=>`<option value="${c.id}">${c.firstName} ${c.lastName}</option>`).join('');
+ patientSel.value=curPatient;
+
+ const providerSel=document.getElementById('schedFilterProvider');
+ const curProvider=providerSel.value;
+ providerSel.innerHTML='<option value="">All Providers</option>'+DB.users.list().map(u=>`<option value="${u.id}">${displayProviderName(u)}</option>`).join('');
+ providerSel.value=curProvider;
+
+ const facilitySel=document.getElementById('schedFilterFacility');
+ const curFacility=facilitySel.value;
+ const facilities=[...new Set(DB.schedule.list().map(r=>r.facility).filter(Boolean))];
+ facilitySel.innerHTML='<option value="">All Facilities</option>'+facilities.map(f=>`<option value="${f}">${f}</option>`).join('');
+ facilitySel.value=curFacility;
+
+ const statusSel=document.getElementById('schedFilterStatus');
+ const curStatus=statusSel.value;
+ statusSel.innerHTML='<option value="">All Statuses</option>'+SCHEDULE_STATUSES.map(s=>`<option value="${s}">${s}</option>`).join('');
+ statusSel.value=curStatus;
+}
+function applyScheduleFilters(){
+ scheduleFilters.patientId=document.getElementById('schedFilterPatient').value?+document.getElementById('schedFilterPatient').value:null;
+ scheduleFilters.providerId=document.getElementById('schedFilterProvider').value?+document.getElementById('schedFilterProvider').value:null;
+ scheduleFilters.facility=document.getElementById('schedFilterFacility').value||null;
+ scheduleFilters.status=document.getElementById('schedFilterStatus').value||null;
+ renderSchedule();
+}
+function resetScheduleFilters(){
+ scheduleFilters={patientId:null, providerId:null, facility:null, status:null};
+ scheduleAnchorDate=TODAY;
+ document.getElementById('schedFilterPatient').value='';
+ document.getElementById('schedFilterProvider').value='';
+ document.getElementById('schedFilterFacility').value='';
+ document.getElementById('schedFilterStatus').value='';
+ document.getElementById('schedFilterDate').value=TODAY;
+ renderSchedule();
+}
 function renderSchedule(){
- const rows=DB.schedule.list();
- document.getElementById('apptRows').innerHTML=rows.map(a=>{
+ populateScheduleFilterOptions();
+ const [rangeStart,rangeEnd]=scheduleDateRange();
+ let rows=DB.schedule.list(r=>r.date>=rangeStart && r.date<=rangeEnd);
+ if(scheduleFilters.patientId) rows=rows.filter(r=>r.customerId===scheduleFilters.patientId);
+ if(scheduleFilters.providerId) rows=rows.filter(r=>r.providerId===scheduleFilters.providerId);
+ if(scheduleFilters.facility) rows=rows.filter(r=>r.facility===scheduleFilters.facility);
+ if(scheduleFilters.status) rows=rows.filter(r=>r.status===scheduleFilters.status);
+ rows=rows.slice().sort((a,b)=> a.date===b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date));
+
+ document.getElementById('scheduleRangeLabel').textContent = rangeStart===rangeEnd
+  ? `Showing ${isoDateToUS(rangeStart)} · ${rows.length} ${rows.length===1?'entry':'entries'}`
+  : `Showing ${isoDateToUS(rangeStart)} – ${isoDateToUS(rangeEnd)} · ${rows.length} ${rows.length===1?'entry':'entries'}`;
+
+ document.getElementById('apptRows').innerHTML = rows.length ? rows.map(a=>{
   const c=DB.customers.get(a.customerId);
   const provider=DB.users.get(a.providerId);
   const name=c?`${c.firstName} ${c.lastName}`:'Unknown';
@@ -931,11 +1044,11 @@ function renderSchedule(){
    <td><b>${a.type}</b><div class="small">${a.site||''}</div></td>
    <td>${displayProviderName(provider)}</td><td>${a.facility}</td>
    <td><select class="status-select" onchange="updateScheduleStatus(${a.id},this.value)">
-    ${['Pending','Confirmed','Arrived','Checked In','Checked Out','No Show','Cancelled'].map(s=>`<option ${s===a.status?'selected':''}>${s}</option>`).join('')}
+    ${SCHEDULE_STATUSES.map(s=>`<option ${s===a.status?'selected':''}>${s}</option>`).join('')}
    </select></td>
    <td><button class="btn ghost" onclick="deleteSchedule(${a.id})">Delete</button></td>
   </tr>`;
- }).join('');
+ }).join('') : `<tr><td colspan="8" class="small" style="padding:16px 10px">No schedule entries match the current view and filters.</td></tr>`;
 }
 function updateScheduleStatus(id,status){
  DB.schedule.update(id,{status});
@@ -1499,6 +1612,7 @@ async function boot(){
  currentPatientId = DB.customers.list()[0]?.id ?? null;
  selectedSite = DB.skinSitesForCustomer(currentPatientId)[0]?.id ?? null;
  currentThread = DB.messageThreads.list()[0]?.id ?? null;
+ document.getElementById('schedFilterDate').value=TODAY;
  renderPatientSwitcher();
  renderPatientContext();
  renderProcedureState();
