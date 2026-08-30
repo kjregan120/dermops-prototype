@@ -120,7 +120,7 @@ button{cursor:pointer}
 .bubble{max-width:74%;background:#eef1f4;padding:11px 13px;border-radius:14px;margin:6px 0;font-size:13px}.bubble.me{margin-left:auto;background:#e8dcfa}
 .compose{display:flex;gap:8px;margin-top:auto;padding-top:15px}.compose input{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px}
 .modal{position:fixed;inset:0;background:rgba(20,24,36,.4);display:none;align-items:center;justify-content:center;z-index:90;padding:18px}
-.modal.open{display:flex}.modal-card{width:min(560px,100%);background:#fff;border-radius:18px;padding:18px;box-shadow:0 30px 70px rgba(0,0,0,.2)}
+.modal.open{display:flex}.modal-card{width:min(560px,100%);max-height:88vh;overflow-y:auto;background:#fff;border-radius:18px;padding:18px;box-shadow:0 30px 70px rgba(0,0,0,.2)}
 .modal-card h3{margin-top:0}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form-grid .full{grid-column:1/-1}
 .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 .mobile-bottom{display:none}
@@ -329,7 +329,7 @@ button{cursor:pointer}
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px" id="procFieldsGrid"></div>
             <div class="section-title"><h3>Clinical Photos</h3></div>
             <div id="examPhotoGallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px"></div>
-            <input type="file" id="examPhotoInput" accept="image/*" style="display:none" onchange="handleExamPhotoSelected(event)">
+            <input type="file" id="clinicalPhotoInput" accept="image/*" style="display:none" onchange="handlePhotoFileSelected(event)">
           </div>
         </section>
 
@@ -422,7 +422,7 @@ button{cursor:pointer}
   </div>
 </div>
 <div class="modal" id="patientModal">
-  <div class="modal-card">
+  <div class="modal-card" style="width:min(640px,100%)">
     <h3 id="patientModalTitle">New Patient</h3>
     <div class="form-grid">
       <div class="full" id="npMrnRow" style="display:none">
@@ -438,6 +438,62 @@ button{cursor:pointer}
       <div class="full"><label class="small">Email</label><input id="npEmail" class="btn" style="width:100%" placeholder="Optional"></div>
       <div class="full"><label class="small">City, State</label><input id="npCity" class="btn" style="width:100%" placeholder="Optional"></div>
     </div>
+
+    <div id="patientIntakeSections">
+      <div class="section-title" style="margin:18px 0 6px"><h3 style="font-size:14px">Drug Allergies</h3></div>
+      <div id="intakeAllergyList" style="display:grid;gap:6px;margin-bottom:8px"></div>
+      <div class="form-grid">
+        <div class="full"><input id="iaSubstance" class="btn" style="width:100%" placeholder="Substance, e.g. Penicillin"></div>
+        <div><select id="iaSeverity" class="btn" style="width:100%">
+          <option value="mild">Mild</option>
+          <option value="moderate" selected>Moderate</option>
+          <option value="severe">Severe</option>
+        </select></div>
+        <div><button class="btn" style="width:100%" onclick="addIntakeAllergy()">+ Add Allergy</button></div>
+      </div>
+
+      <div class="section-title" style="margin:18px 0 6px"><h3 style="font-size:14px">Medical History</h3></div>
+      <div id="intakeConditionList" style="display:grid;gap:6px;margin-bottom:8px"></div>
+      <div class="form-grid">
+        <div class="full"><input id="icName" class="btn" style="width:100%" placeholder="Condition, e.g. Hypertension"></div>
+        <div><select id="icStatus" class="btn" style="width:100%">
+          <option value="active" selected>Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="history">History</option>
+        </select></div>
+        <div><button class="btn" style="width:100%" onclick="addIntakeCondition()">+ Add Condition</button></div>
+      </div>
+
+      <div class="section-title" style="margin:18px 0 6px"><h3 style="font-size:14px">Medications</h3></div>
+      <div id="intakeMedicationList" style="display:grid;gap:6px;margin-bottom:8px"></div>
+      <div class="form-grid">
+        <div><input id="imName" class="btn" style="width:100%" placeholder="Medication"></div>
+        <div><input id="imDose" class="btn" style="width:100%" placeholder="Dose, e.g. 10 mg"></div>
+        <div><select id="imStatus" class="btn" style="width:100%">
+          <option value="active" selected>Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="historical">Historical</option>
+        </select></div>
+        <div><button class="btn" style="width:100%" onclick="addIntakeMedication()">+ Add Medication</button></div>
+      </div>
+
+      <div class="section-title" style="margin:18px 0 6px"><h3 style="font-size:14px">Skin History</h3></div>
+      <div id="intakeSkinList" style="display:grid;gap:6px;margin-bottom:8px"></div>
+      <div class="form-grid">
+        <div class="full"><input id="isLabel" class="btn" style="width:100%" placeholder="Site or lesion, e.g. Mole, left shoulder"></div>
+        <div><input id="isDiagnosis" class="btn" style="width:100%" placeholder="Diagnosis (optional)"></div>
+        <div><select id="isStatus" class="btn" style="width:100%">
+          <option value="observe" selected>Observe</option>
+          <option value="active">Active</option>
+          <option value="treated">Treated</option>
+          <option value="resolved">Resolved</option>
+        </select></div>
+        <div class="full"><label class="small">Photo (optional)</label><input type="file" id="isPhoto" accept="image/*" class="btn" style="width:100%"></div>
+        <div class="full"><button class="btn" style="width:100%" onclick="addIntakeSkinHistory()">+ Add Skin History Item</button></div>
+      </div>
+      <div class="small" style="margin-top:6px;color:var(--muted)">Skin history items are added at a default body location — reposition them precisely from the Dermatology tab once placed.</div>
+    </div>
+
     <div class="modal-actions"><button class="btn" onclick="closePatientModal()">Cancel</button><button class="btn primary" onclick="savePatientModal()">Save</button></div>
   </div>
 </div>
@@ -1007,17 +1063,7 @@ function deleteExam(){
  toast('Exam deleted');
 }
 
-let editingPhotoId=null;
-let pendingPhotoDataUrl=null;
-function triggerPhotoUpload(){
- const p=getPatient();
- if(!p.scheduleId){ toast('No active exam to attach a photo to'); return; }
- document.getElementById('examPhotoInput').click();
-}
-function handleExamPhotoSelected(e){
- const file=e.target.files[0];
- e.target.value='';
- if(!file) return;
+function compressImageFile(file, onDone){
  if(!file.type.startsWith('image/')){ toast('Please choose an image file'); return; }
  const reader=new FileReader();
  reader.onload=()=>{
@@ -1030,22 +1076,45 @@ function handleExamPhotoSelected(e){
    canvas.width=Math.round(img.width*scale);
    canvas.height=Math.round(img.height*scale);
    canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-   pendingPhotoDataUrl=canvas.toDataURL('image/jpeg',0.8);
-   editingPhotoId=null;
-   document.getElementById('photoModalTitle').textContent='Add Clinical Photo';
-   document.getElementById('photoPreview').src=pendingPhotoDataUrl;
-   document.getElementById('phCaption').value='';
-   document.getElementById('photoModal').classList.add('open');
+   onDone(canvas.toDataURL('image/jpeg',0.8));
   };
   img.src=reader.result;
  };
  reader.readAsDataURL(file);
 }
-function editExamPhotoCaption(id){
+
+let editingPhotoId=null;
+let pendingPhotoDataUrl=null;
+let pendingPhotoContext=null;
+function triggerPhotoUpload(){
+ const p=getPatient();
+ if(!p.scheduleId){ toast('No active exam to attach a photo to'); return; }
+ pendingPhotoContext={customerId:p.customerId, scheduleId:p.scheduleId, skinSiteId:p.skinSiteId||null};
+ document.getElementById('clinicalPhotoInput').click();
+}
+function triggerSitePhotoUpload(siteId){
+ pendingPhotoContext={customerId:currentPatientId, scheduleId:null, skinSiteId:siteId};
+ document.getElementById('clinicalPhotoInput').click();
+}
+function handlePhotoFileSelected(e){
+ const file=e.target.files[0];
+ e.target.value='';
+ if(!file) return;
+ compressImageFile(file, (dataUrl)=>{
+  pendingPhotoDataUrl=dataUrl;
+  editingPhotoId=null;
+  document.getElementById('photoModalTitle').textContent='Add Clinical Photo';
+  document.getElementById('photoPreview').src=dataUrl;
+  document.getElementById('phCaption').value='';
+  document.getElementById('photoModal').classList.add('open');
+ });
+}
+function editPhotoCaption(id){
  const rec=DB.clinicalImages.get(id);
  if(!rec) return;
  editingPhotoId=id;
  pendingPhotoDataUrl=null;
+ pendingPhotoContext=null;
  document.getElementById('photoModalTitle').textContent='Edit Photo';
  document.getElementById('photoPreview').src=rec.dataUrl;
  document.getElementById('phCaption').value=rec.caption||'';
@@ -1054,36 +1123,38 @@ function editExamPhotoCaption(id){
 function closePhotoModal(){
  document.getElementById('photoModal').classList.remove('open');
  pendingPhotoDataUrl=null;
+ pendingPhotoContext=null;
  editingPhotoId=null;
 }
 function savePhotoModal(){
  const caption=document.getElementById('phCaption').value.trim();
- const p=getPatient();
  if(editingPhotoId){
   DB.clinicalImages.update(editingPhotoId, {caption});
   closePhotoModal();
   renderExamPhotos();
+  renderSites();
   toast('Photo updated');
   return;
  }
- if(!pendingPhotoDataUrl || !p.scheduleId){ closePhotoModal(); return; }
+ if(!pendingPhotoDataUrl || !pendingPhotoContext){ closePhotoModal(); return; }
  try{
   DB.clinicalImages.create({
-   customerId:p.customerId, scheduleId:p.scheduleId, skinSiteId:p.skinSiteId||null,
-   caption, dataUrl:pendingPhotoDataUrl, takenBy:CURRENT_USER_ID
+   ...pendingPhotoContext, caption, dataUrl:pendingPhotoDataUrl, takenBy:CURRENT_USER_ID
   });
   closePhotoModal();
   renderExamPhotos();
+  renderSites();
   toast('Photo added');
  } catch(err){
   closePhotoModal();
   toast('Could not save photo — local storage limit reached. Try deleting an older photo first.');
  }
 }
-function deleteExamPhoto(id){
+function deletePhoto(id){
  if(!confirm('Delete this clinical photo?')) return;
  DB.clinicalImages.remove(id);
  renderExamPhotos();
+ renderSites();
  toast('Photo deleted');
 }
 function renderExamPhotos(){
@@ -1096,8 +1167,8 @@ function renderExamPhotos(){
      <img src="${ph.dataUrl}" style="width:100%;height:100px;object-fit:cover;border-radius:8px;display:block">
      <div class="small" style="margin-top:6px;min-height:14px">${ph.caption||''}</div>
      <div style="display:flex;gap:6px;margin-top:6px">
-       <button class="btn ghost" style="padding:3px 7px;font-size:11px;flex:1" onclick="editExamPhotoCaption(${ph.id})">Edit</button>
-       <button class="btn ghost" style="padding:3px 7px;font-size:11px;flex:1" onclick="deleteExamPhoto(${ph.id})">Delete</button>
+       <button class="btn ghost" style="padding:3px 7px;font-size:11px;flex:1" onclick="editPhotoCaption(${ph.id})">Edit</button>
+       <button class="btn ghost" style="padding:3px 7px;font-size:11px;flex:1" onclick="deletePhoto(${ph.id})">Delete</button>
      </div>
    </div>`).join('') : '<div class="small">No photos yet.</div>';
 }
@@ -1241,6 +1312,12 @@ function renderSites(){
  const detailEl=document.getElementById('siteDetail');
  const s=list.find(x=>x.id===selectedSite);
  if(!s){ detailEl.innerHTML='<div class="small" style="padding:8px 0">No skin sites tracked for this patient yet.</div>'; return; }
+ const photos=DB.clinicalImages.list(r=>r.skinSiteId===s.id);
+ const photoGallery=photos.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-top:8px">${photos.map(ph=>`
+    <div style="position:relative">
+      <img src="${ph.dataUrl}" style="width:100%;height:70px;object-fit:cover;border-radius:8px;display:block">
+      <button class="btn ghost" style="position:absolute;top:3px;right:3px;padding:1px 6px;font-size:10px" onclick="deletePhoto(${ph.id})">×</button>
+    </div>`).join('')}</div>` : '';
  detailEl.innerHTML=`<div class="clinical-card card" style="box-shadow:none">
    <div class="head"><h3>${s.title}</h3><button class="btn ghost" onclick="openEditSiteModal(${s.id})">Edit</button></div>
    <div class="clinical-row"><div class="k">Diagnosis</div><div class="v">${s.diagnosis}</div></div>
@@ -1250,7 +1327,8 @@ function renderSites(){
    ${s.procedure?`<div class="clinical-row"><div class="k">Suggested Procedure</div><div class="v">${s.procedure}</div></div>`:''}
    <div class="clinical-row"><div class="k">Marker Size</div><div class="v" style="width:130px"><input type="range" min="1" max="10" value="${s.sizeStep||4}" oninput="resizeSite(${s.id},this.value)" style="width:100%"></div></div>
    <div class="small" style="margin-top:10px">${s.notes||''}</div>
-   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" onclick="toast('Photos placeholder')">Photos</button><button class="btn" onclick="deleteSite(${s.id})">Delete</button><button class="btn primary" onclick="navigate('procedure')">Procedure</button></div>
+   ${photoGallery}
+   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" onclick="triggerSitePhotoUpload(${s.id})">+ Photo</button><button class="btn" onclick="deleteSite(${s.id})">Delete</button><button class="btn primary" onclick="navigate('procedure')">Procedure</button></div>
  </div>`;
 }
 function selectSite(id){
@@ -1511,6 +1589,69 @@ function nextMrn(){
  const nums=DB.customers.list().map(c=>parseInt(c.mrn,10)).filter(n=>!isNaN(n));
  return String((nums.length?Math.max(...nums):101000)+1);
 }
+let intakeAllergies=[], intakeConditions=[], intakeMedications=[], intakeSkinHistory=[];
+function renderStagedList(containerId, items, labelFn, removeFn){
+ const el=document.getElementById(containerId);
+ el.innerHTML = items.map((item,i)=>`<div class="clinical-row"><div class="k">${labelFn(item)}</div><div class="v"><button class="btn ghost" style="padding:2px 7px;font-size:11px" onclick="${removeFn}(${i})">×</button></div></div>`).join('');
+}
+function renderIntakeAllergies(){ renderStagedList('intakeAllergyList', intakeAllergies, a=>`${a.substance} · ${a.severity}`, 'removeIntakeAllergy'); }
+function addIntakeAllergy(){
+ const substance=document.getElementById('iaSubstance').value.trim();
+ if(!substance){ toast('Substance is required'); return; }
+ intakeAllergies.push({substance, severity:document.getElementById('iaSeverity').value});
+ document.getElementById('iaSubstance').value='';
+ renderIntakeAllergies();
+}
+function removeIntakeAllergy(i){ intakeAllergies.splice(i,1); renderIntakeAllergies(); }
+
+function renderIntakeConditions(){ renderStagedList('intakeConditionList', intakeConditions, c=>`${c.name} · ${c.status}`, 'removeIntakeCondition'); }
+function addIntakeCondition(){
+ const name=document.getElementById('icName').value.trim();
+ if(!name){ toast('Condition name is required'); return; }
+ intakeConditions.push({name, status:document.getElementById('icStatus').value});
+ document.getElementById('icName').value='';
+ renderIntakeConditions();
+}
+function removeIntakeCondition(i){ intakeConditions.splice(i,1); renderIntakeConditions(); }
+
+function renderIntakeMedications(){ renderStagedList('intakeMedicationList', intakeMedications, m=>`${m.name}${m.dose?' · '+m.dose:''} · ${m.status}`, 'removeIntakeMedication'); }
+function addIntakeMedication(){
+ const name=document.getElementById('imName').value.trim();
+ if(!name){ toast('Medication name is required'); return; }
+ intakeMedications.push({name, dose:document.getElementById('imDose').value.trim(), status:document.getElementById('imStatus').value});
+ document.getElementById('imName').value='';
+ document.getElementById('imDose').value='';
+ renderIntakeMedications();
+}
+function removeIntakeMedication(i){ intakeMedications.splice(i,1); renderIntakeMedications(); }
+
+function renderIntakeSkinHistory(){ renderStagedList('intakeSkinList', intakeSkinHistory, s=>`${s.label} · ${s.diagnosis} · ${s.status}${s.dataUrl?' · 📷':''}`, 'removeIntakeSkinHistory'); }
+function addIntakeSkinHistory(){
+ const label=document.getElementById('isLabel').value.trim();
+ if(!label){ toast('Site/lesion label is required'); return; }
+ const diagnosis=document.getElementById('isDiagnosis').value.trim()||'Unspecified';
+ const status=document.getElementById('isStatus').value;
+ const fileInput=document.getElementById('isPhoto');
+ const file=fileInput.files[0];
+ const finish=(dataUrl)=>{
+  intakeSkinHistory.push({label, diagnosis, status, dataUrl});
+  document.getElementById('isLabel').value='';
+  document.getElementById('isDiagnosis').value='';
+  fileInput.value='';
+  renderIntakeSkinHistory();
+ };
+ if(file){ compressImageFile(file, finish); } else { finish(null); }
+}
+function removeIntakeSkinHistory(i){ intakeSkinHistory.splice(i,1); renderIntakeSkinHistory(); }
+
+function resetIntakeSections(){
+ intakeAllergies=[]; intakeConditions=[]; intakeMedications=[]; intakeSkinHistory=[];
+ renderIntakeAllergies(); renderIntakeConditions(); renderIntakeMedications(); renderIntakeSkinHistory();
+ document.getElementById('iaSubstance').value='';
+ document.getElementById('icName').value='';
+ document.getElementById('imName').value=''; document.getElementById('imDose').value='';
+ document.getElementById('isLabel').value=''; document.getElementById('isDiagnosis').value=''; document.getElementById('isPhoto').value='';
+}
 function openNewPatient(){
  editingCustomerId=null;
  document.getElementById('patientModalTitle').textContent='New Patient';
@@ -1523,6 +1664,8 @@ function openNewPatient(){
  document.getElementById('npPhone').value='';
  document.getElementById('npEmail').value='';
  document.getElementById('npCity').value='';
+ document.getElementById('patientIntakeSections').style.display='block';
+ resetIntakeSections();
  document.getElementById('patientModal').classList.add('open');
 }
 function openEditPatient(){
@@ -1540,6 +1683,7 @@ function openEditPatient(){
  document.getElementById('npPhone').value=c.phone||'';
  document.getElementById('npEmail').value=c.email||'';
  document.getElementById('npCity').value=c.city||'';
+ document.getElementById('patientIntakeSections').style.display='none';
  document.getElementById('patientModal').classList.add('open');
 }
 function closePatientModal(){ document.getElementById('patientModal').classList.remove('open'); }
@@ -1566,6 +1710,20 @@ function savePatientModal(){
   toast('Patient updated');
  } else {
   const created=DB.customers.create({...payload, mrn:nextMrn(), status:'active'});
+  intakeAllergies.forEach(a=>DB.allergies.create({customerId:created.id, substance:a.substance, severity:a.severity}));
+  intakeConditions.forEach(c=>DB.conditions.create({customerId:created.id, name:c.name, status:c.status}));
+  intakeMedications.forEach(m=>DB.medications.create({customerId:created.id, name:m.name, dose:m.dose, status:m.status}));
+  intakeSkinHistory.forEach(s=>{
+   const site=DB.skinSites.create({
+    customerId:created.id, title:s.label, diagnosis:s.diagnosis, procedure:'',
+    sizeMm:null, status:s.status, view:'front', x:0.5, y:0.5, sizeStep:4,
+    biopsyDate:null, notes:'Reported at intake.'
+   });
+   if(s.dataUrl){
+    DB.clinicalImages.create({customerId:created.id, scheduleId:null, skinSiteId:site.id, caption:s.label, dataUrl:s.dataUrl, takenBy:CURRENT_USER_ID});
+   }
+  });
+  resetIntakeSections();
   closePatientModal();
   renderPatientSwitcher();
   switchPatient(created.id);
