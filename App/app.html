@@ -312,7 +312,11 @@ button{cursor:pointer}
           <div class="card hero">
             <div class="hero-head">
               <div><div class="hero-title" id="procedureTitle">Mohs Surgery · Jane Smith</div><div class="hero-sub" id="procedureSub">Left temple · BCC · 9 mm · Dr. Maya Patel</div></div>
-              <span class="badge warn" id="procBadge">In Progress</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="badge warn" id="procBadge">In Progress</span>
+                <button class="btn ghost" onclick="openEditExamModal()">Edit</button>
+                <button class="btn ghost" onclick="deleteExam()">Delete</button>
+              </div>
             </div>
             <div class="workflow" id="procWorkflow"></div>
             <div class="quick-grid">
@@ -504,6 +508,21 @@ button{cursor:pointer}
       </div>
     </div>
     <div class="modal-actions"><button class="btn" onclick="closeMedicationModal()">Cancel</button><button class="btn primary" onclick="saveMedicationModal()">Save</button></div>
+  </div>
+</div>
+<div class="modal" id="examModal">
+  <div class="modal-card">
+    <h3>Edit Exam</h3>
+    <div class="form-grid">
+      <div><label class="small">Stage</label><select id="exStage" class="btn" style="width:100%"></select></div>
+      <div><label class="small">Provider</label><select id="exProvider" class="btn" style="width:100%"></select></div>
+      <div><label class="small">Room</label><input id="exRoom" class="btn" style="width:100%" placeholder="Optional"></div>
+      <div><label class="small">Anesthetic</label><input id="exAnesthetic" class="btn" style="width:100%" placeholder="Optional"></div>
+      <div><label class="small">Margin Plan</label><input id="exMarginPlan" class="btn" style="width:100%" placeholder="Optional"></div>
+      <div><label class="small">Assessment</label><input id="exAssessment" class="btn" style="width:100%" placeholder="Optional"></div>
+      <div class="full"><label class="small">Findings</label><input id="exFindings" class="btn" style="width:100%" placeholder="Optional"></div>
+    </div>
+    <div class="modal-actions"><button class="btn" onclick="closeExamModal()">Cancel</button><button class="btn primary" onclick="saveExamModal()">Save</button></div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -844,8 +863,8 @@ function buildPatientViewModel(customerId){
   size: site && site.sizeMm ? `${site.sizeMm} mm` : '—',
   appt: apptDisplay,
   procIndex: appt ? (appt.procIndex ?? 0) : 0,
-  room, anesthetic: appt?appt.anesthetic:undefined, marginPlan: appt?appt.marginPlan:undefined,
-  provider: providerDisplay, assessment: appt?appt.assessment:undefined, findings: appt?appt.findings:undefined
+  room, anesthetic: appt?(appt.anesthetic||''):'', marginPlan: appt?(appt.marginPlan||''):'',
+  provider: providerDisplay, assessment: appt?(appt.assessment||''):'', findings: appt?(appt.findings||''):''
  };
 }
 function getPatient(){ return buildPatientViewModel(currentPatientId); }
@@ -930,6 +949,49 @@ function advanceProcedure(){
  }
  renderProcedureState();
  toast('Advanced to '+wf.steps[getPatient().procIndex]);
+}
+function openEditExamModal(){
+ const p=getPatient();
+ if(!p.scheduleId){ toast('No active exam to edit'); return; }
+ const s=DB.schedule.get(p.scheduleId);
+ const wf=getWorkflow(p);
+ document.getElementById('exStage').innerHTML=wf.steps.map((step,i)=>`<option value="${i}" ${i===p.procIndex?'selected':''}>${step}</option>`).join('');
+ document.getElementById('exProvider').innerHTML=DB.users.list(u=>u.active).map(u=>`<option value="${u.id}" ${u.id===s.providerId?'selected':''}>${displayProviderName(u)}</option>`).join('');
+ document.getElementById('exRoom').value=s.room||'';
+ document.getElementById('exAnesthetic').value=s.anesthetic||'';
+ document.getElementById('exMarginPlan').value=s.marginPlan||'';
+ document.getElementById('exAssessment').value=s.assessment||'';
+ document.getElementById('exFindings').value=s.findings||'';
+ document.getElementById('examModal').classList.add('open');
+}
+function closeExamModal(){ document.getElementById('examModal').classList.remove('open'); }
+function saveExamModal(){
+ const p=getPatient();
+ if(!p.scheduleId) return;
+ DB.schedule.update(p.scheduleId, {
+  procIndex: +document.getElementById('exStage').value,
+  providerId: +document.getElementById('exProvider').value,
+  room: document.getElementById('exRoom').value.trim(),
+  anesthetic: document.getElementById('exAnesthetic').value.trim(),
+  marginPlan: document.getElementById('exMarginPlan').value.trim(),
+  assessment: document.getElementById('exAssessment').value.trim(),
+  findings: document.getElementById('exFindings').value.trim()
+ });
+ closeExamModal();
+ renderPatientContext();
+ renderProcedureState();
+ renderSchedule();
+ toast('Exam updated');
+}
+function deleteExam(){
+ const p=getPatient();
+ if(!p.scheduleId){ toast('No active exam to delete'); return; }
+ if(!confirm('Delete this exam? This removes the appointment from the schedule entirely.')) return;
+ DB.schedule.remove(p.scheduleId);
+ renderPatientContext();
+ renderProcedureState();
+ renderSchedule();
+ toast('Exam deleted');
 }
 function renderTimeline(){
  const p=getPatient();
@@ -1057,6 +1119,8 @@ function updateScheduleStatus(id,status){
 function deleteSchedule(id){
  DB.schedule.remove(id);
  renderSchedule();
+ renderPatientContext();
+ renderProcedureState();
  toast('Schedule entry deleted');
 }
 function renderSites(){
@@ -1590,6 +1654,7 @@ document.getElementById('providerModal').addEventListener('click',e=>{if(e.targe
 document.getElementById('allergyModal').addEventListener('click',e=>{if(e.target.id==='allergyModal')closeAllergyModal()});
 document.getElementById('conditionModal').addEventListener('click',e=>{if(e.target.id==='conditionModal')closeConditionModal()});
 document.getElementById('medicationModal').addEventListener('click',e=>{if(e.target.id==='medicationModal')closeMedicationModal()});
+document.getElementById('examModal').addEventListener('click',e=>{if(e.target.id==='examModal')closeExamModal()});
 document.getElementById('search').addEventListener('input',e=>{
  const q=e.target.value.toLowerCase().trim();
  if(q.length<2)return;
