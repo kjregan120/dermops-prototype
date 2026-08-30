@@ -11,6 +11,13 @@
     "email": "",
     "city": "Wilton, CT",
     "status": "active",
+    "pharmacy": {
+      "name": "CVS Pharmacy",
+      "type": "retail",
+      "phone": "(203) 555-0142",
+      "fax": "",
+      "address": "45 Danbury Rd, Wilton, CT 06897"
+    },
     "createdAt": "2025-01-06T09:00:00.000Z",
     "updatedAt": "2026-08-28T08:00:00.000Z"
   },
@@ -26,6 +33,13 @@
     "email": "",
     "city": "Ridgefield, CT",
     "status": "active",
+    "pharmacy": {
+      "name": "Walgreens",
+      "type": "retail",
+      "phone": "(203) 555-0198",
+      "fax": "",
+      "address": "12 Main St, Ridgefield, CT 06877"
+    },
     "createdAt": "2025-02-14T09:00:00.000Z",
     "updatedAt": "2026-08-28T08:30:00.000Z"
   },
@@ -41,6 +55,7 @@
     "email": "",
     "city": "Westport, CT",
     "status": "active",
+    "pharmacy": null,
     "createdAt": "2025-03-30T09:00:00.000Z",
     "updatedAt": "2026-08-28T09:00:00.000Z"
   },
@@ -56,6 +71,7 @@
     "email": "",
     "city": "New Canaan, CT",
     "status": "active",
+    "pharmacy": null,
     "createdAt": "2025-04-11T09:00:00.000Z",
     "updatedAt": "2026-08-28T10:00:00.000Z"
   }

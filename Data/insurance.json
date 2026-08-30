@@ -1,0 +1,54 @@
+[
+  {
+    "id": 1,
+    "customerId": 1,
+    "payor": "Blue Cross Blue Shield",
+    "policyType": "primary",
+    "policyNumber": "BCB-88213",
+    "policyHolder": "Self",
+    "memberId": "YHJ804512233",
+    "status": "active",
+    "acceptanceStatus": "accepted",
+    "createdAt": "2025-01-06T09:00:00.000Z",
+    "updatedAt": "2025-01-06T09:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "customerId": 2,
+    "payor": "Aetna",
+    "policyType": "primary",
+    "policyNumber": "AET-55210",
+    "policyHolder": "Self",
+    "memberId": "W2093481",
+    "status": "active",
+    "acceptanceStatus": "accepted",
+    "createdAt": "2025-02-14T09:00:00.000Z",
+    "updatedAt": "2025-02-14T09:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "customerId": 3,
+    "payor": "UnitedHealthcare",
+    "policyType": "primary",
+    "policyNumber": "UHC-33920",
+    "policyHolder": "Self",
+    "memberId": "UHC7723190",
+    "status": "pending_verification",
+    "acceptanceStatus": "pending_verification",
+    "createdAt": "2025-03-30T09:00:00.000Z",
+    "updatedAt": "2025-03-30T09:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "customerId": 3,
+    "payor": "Cigna",
+    "policyType": "secondary",
+    "policyNumber": "CIG-10294",
+    "policyHolder": "David Williams",
+    "memberId": "CIG5512207",
+    "status": "active",
+    "acceptanceStatus": "accepted",
+    "createdAt": "2025-03-30T09:05:00.000Z",
+    "updatedAt": "2025-03-30T09:05:00.000Z"
+  }
+]

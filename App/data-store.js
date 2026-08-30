@@ -1,13 +1,16 @@
 /*
  * DermaOps local data store.
  *
- * Collections: customers, allergies, conditions, medications, users
- * (providers + support staff, distinguished by `role`), schedule (booked
- * visits — formerly "appointments"), skinSites, visitNotes, messageThreads,
- * messages, clinicalImages. allergies/conditions/medications are normalized
- * per SPEC-02 (own id + customerId) rather than nested on the customer
- * record, so each entry can be edited/deleted independently. Schemas and
- * seed content live in /Data/*.json.
+ * Collections: customers, allergies, conditions, medications, insurance,
+ * users (providers + support staff, distinguished by `role`), schedule
+ * (booked visits — formerly "appointments"), skinSites, visitNotes,
+ * messageThreads, messages, clinicalImages. allergies/conditions/
+ * medications/insurance are normalized per SPEC-02/SPEC-11 (own id +
+ * customerId) rather than nested on the customer record, so each entry
+ * can be edited/deleted independently. A patient's primary pharmacy is
+ * the one exception — it's a single value, not a repeatable list, so it
+ * lives directly on the customer record as a `pharmacy` object (or null).
+ * Schemas and seed content live in /Data/*.json.
  *
  * Persistence model: on first load, seed JSON is fetched from /Data and
  * cached into localStorage under STORAGE_KEY. Every create/update/remove
@@ -35,6 +38,7 @@ const DB = (() => {
     'allergies',
     'conditions',
     'medications',
+    'insurance',
     'users',
     'schedule',
     'skinSites',
@@ -43,7 +47,7 @@ const DB = (() => {
     'messages',
     'clinicalImages'
   ];
-  const STORAGE_KEY = 'dermaops.db.v4';
+  const STORAGE_KEY = 'dermaops.db.v5';
   const DATA_BASE = '../Data/';
 
   let state = null;
@@ -130,6 +134,7 @@ const DB = (() => {
   api.allergiesForCustomer = (customerId) => api.allergies.list((r) => r.customerId === customerId);
   api.conditionsForCustomer = (customerId) => api.conditions.list((r) => r.customerId === customerId);
   api.medicationsForCustomer = (customerId) => api.medications.list((r) => r.customerId === customerId);
+  api.insuranceForCustomer = (customerId) => api.insurance.list((r) => r.customerId === customerId);
   api.scheduleForCustomer = (customerId) => api.schedule.list((r) => r.customerId === customerId);
   api.imagesForSchedule = (scheduleId) => api.clinicalImages.list((r) => r.scheduleId === scheduleId);
   api.skinSitesForCustomer = (customerId) => api.skinSites.list((r) => r.customerId === customerId);

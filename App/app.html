@@ -542,6 +542,48 @@ button{cursor:pointer}
         <div class="full"><button class="btn" style="width:100%" onclick="addIntakeSkinHistory()">+ Add Skin History Item</button></div>
       </div>
       <div class="small" style="margin-top:6px;color:var(--muted)">Skin history items are added at a default body location — reposition them precisely from the Dermatology tab once placed.</div>
+
+      <div class="section-title" style="margin:18px 0 6px"><h3 style="font-size:14px">Insurance</h3></div>
+      <div id="intakeInsuranceList" style="display:grid;gap:6px;margin-bottom:8px"></div>
+      <div class="form-grid">
+        <div><input id="iiPayor" class="btn" style="width:100%" placeholder="Payor, e.g. Aetna"></div>
+        <div><select id="iiPolicyType" class="btn" style="width:100%">
+          <option value="primary" selected>Primary</option>
+          <option value="secondary">Secondary</option>
+          <option value="tertiary">Tertiary</option>
+        </select></div>
+        <div><input id="iiPolicyNumber" class="btn" style="width:100%" placeholder="Policy #"></div>
+        <div><input id="iiPolicyHolder" class="btn" style="width:100%" placeholder="Policy Holder, e.g. Self"></div>
+        <div class="full"><input id="iiMemberId" class="btn" style="width:100%" placeholder="Subscriber's Member ID"></div>
+        <div><select id="iiStatus" class="btn" style="width:100%">
+          <option value="active" selected>Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="pending_verification">Pending Verification</option>
+          <option value="rejected">Rejected</option>
+          <option value="unknown">Unknown</option>
+        </select></div>
+        <div><select id="iiAcceptanceStatus" class="btn" style="width:100%">
+          <option value="accepted" selected>Accepted</option>
+          <option value="not_accepted">Not Accepted</option>
+          <option value="pending_verification">Pending Verification</option>
+        </select></div>
+        <div class="full"><button class="btn" style="width:100%" onclick="addIntakeInsurance()">+ Add Insurance</button></div>
+      </div>
+
+      <div class="section-title" style="margin:18px 0 6px"><h3 style="font-size:14px">Primary Pharmacy</h3></div>
+      <div class="form-grid">
+        <div class="full"><input id="ipName" class="btn" style="width:100%" placeholder="Pharmacy name, e.g. CVS Pharmacy"></div>
+        <div><select id="ipType" class="btn" style="width:100%">
+          <option value="retail" selected>Retail</option>
+          <option value="mail">Mail Order</option>
+          <option value="specialty">Specialty</option>
+          <option value="other">Other</option>
+        </select></div>
+        <div><input id="ipPhone" class="btn" style="width:100%" placeholder="Phone"></div>
+        <div><input id="ipFax" class="btn" style="width:100%" placeholder="Fax (optional)"></div>
+        <div class="full"><input id="ipAddress" class="btn" style="width:100%" placeholder="Address"></div>
+      </div>
+      <div class="small" style="margin-top:6px;color:var(--muted)">Optional — leave the pharmacy name blank to skip.</div>
     </div>
 
     <div class="modal-actions"><button class="btn" onclick="closePatientModal()">Cancel</button><button class="btn primary" onclick="savePatientModal()">Save</button></div>
@@ -617,6 +659,61 @@ button{cursor:pointer}
       </div>
     </div>
     <div class="modal-actions"><button class="btn" onclick="closeMedicationModal()">Cancel</button><button class="btn primary" onclick="saveMedicationModal()">Save</button></div>
+  </div>
+</div>
+<div class="modal" id="insuranceModal">
+  <div class="modal-card">
+    <h3 id="insuranceModalTitle">Add Insurance</h3>
+    <div class="form-grid">
+      <div><label class="small">Payor</label><input id="inPayor" class="btn" style="width:100%" placeholder="e.g. Blue Cross Blue Shield"></div>
+      <div><label class="small">Policy Type</label>
+        <select id="inPolicyType" class="btn" style="width:100%">
+          <option value="primary">Primary</option>
+          <option value="secondary">Secondary</option>
+          <option value="tertiary">Tertiary</option>
+        </select>
+      </div>
+      <div><label class="small">Policy #</label><input id="inPolicyNumber" class="btn" style="width:100%"></div>
+      <div><label class="small">Policy Holder</label><input id="inPolicyHolder" class="btn" style="width:100%" placeholder="e.g. Self"></div>
+      <div class="full"><label class="small">Subscriber's Member ID</label><input id="inMemberId" class="btn" style="width:100%"></div>
+      <div><label class="small">Status</label>
+        <select id="inStatus" class="btn" style="width:100%">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="pending_verification">Pending Verification</option>
+          <option value="rejected">Rejected</option>
+          <option value="unknown">Unknown</option>
+        </select>
+      </div>
+      <div><label class="small">Acceptance Status</label>
+        <select id="inAcceptanceStatus" class="btn" style="width:100%">
+          <option value="accepted">Accepted</option>
+          <option value="not_accepted">Not Accepted</option>
+          <option value="pending_verification">Pending Verification</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions"><button class="btn" onclick="closeInsuranceModal()">Cancel</button><button class="btn primary" onclick="saveInsuranceModal()">Save</button></div>
+  </div>
+</div>
+<div class="modal" id="pharmacyModal">
+  <div class="modal-card">
+    <h3 id="pharmacyModalTitle">Add Pharmacy</h3>
+    <div class="form-grid">
+      <div class="full"><label class="small">Pharmacy Name</label><input id="phName" class="btn" style="width:100%" placeholder="e.g. CVS Pharmacy"></div>
+      <div><label class="small">Type</label>
+        <select id="phType" class="btn" style="width:100%">
+          <option value="retail">Retail</option>
+          <option value="mail">Mail Order</option>
+          <option value="specialty">Specialty</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div><label class="small">Phone</label><input id="phPhone" class="btn" style="width:100%"></div>
+      <div><label class="small">Fax</label><input id="phFax" class="btn" style="width:100%" placeholder="Optional"></div>
+      <div class="full"><label class="small">Address</label><input id="phAddress" class="btn" style="width:100%"></div>
+    </div>
+    <div class="modal-actions"><button class="btn" onclick="closePharmacyModal()">Cancel</button><button class="btn primary" onclick="savePharmacyModal()">Save</button></div>
   </div>
 </div>
 <div class="modal" id="examModal">
@@ -703,6 +800,10 @@ const THREAD_STATUS_META = {
  awaiting_patient:{label:'Awaiting Patient', cls:'warn'},
  awaiting_staff:{label:'Awaiting Staff', cls:'danger'}
 };
+const INSURANCE_STATUS_LABELS = { active:'Active', inactive:'Inactive', pending_verification:'Pending Verification', rejected:'Rejected', unknown:'Unknown' };
+const ACCEPTANCE_STATUS_LABELS = { accepted:'Accepted', not_accepted:'Not Accepted', pending_verification:'Pending Verification' };
+const PHARMACY_TYPE_LABELS = { retail:'Retail', mail:'Mail Order', specialty:'Specialty', other:'Other' };
+function capitalize(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
 
 function siteMarkerColor(s){
  if(s.status==='active')return '#b14f52';
@@ -976,6 +1077,7 @@ function buildPatientViewModel(customerId){
  const allergies = DB.allergiesForCustomer(customerId);
  const conditions = DB.conditionsForCustomer(customerId);
  const medications = DB.medicationsForCustomer(customerId);
+ const insurance = DB.insuranceForCustomer(customerId);
  const allergyStr = allergies.length ? allergies.map(a=>a.substance).join(', ') : 'None';
  const skin = DB.skinSitesForCustomer(customerId).map(s=>[s.diagnosis, `${s.title} · ${s.status}`]);
  const providerDisplay = displayProviderName(provider);
@@ -990,7 +1092,7 @@ function buildPatientViewModel(customerId){
   dob:isoDateToUS(c.dob),
   sex:`${computeAge(c.dob)}${c.sexAtBirth}`,
   mrn:c.mrn, city:c.city,
-  allergy:allergyStr, allergies, conditions, skin, medications,
+  allergy:allergyStr, allergies, conditions, skin, medications, insurance, pharmacy:c.pharmacy||null,
   headline: appt ? `${appt.type} · ${appt.site||(site?site.title:'')}` : `${c.firstName} ${c.lastName}`,
   sub: appt ? `${site?site.diagnosis:appt.type} · ${providerDisplay} · ${room||appt.facility}` : '',
   procedure: appt ? appt.type : 'Follow-up',
@@ -1042,6 +1144,18 @@ function renderPatientContext(){
      <div class="head"><h3>Medications</h3>${headActions(p.medications.length, 'ok', 'openMedicationModal()')}</div>
      ${p.medications.length ? p.medications.map(m=>`<div class="clinical-row"><div class="k">${m.name}</div><div class="v" style="display:flex;align-items:center;gap:6px;justify-content:flex-end"><span>${m.dose}</span>${rowActions(`openMedicationModal(${m.id})`,`deleteMedication(${m.id})`)}</div></div>`).join('')
      : '<div class="clinical-row"><div class="k">No medications on file</div><div class="v"></div></div>'}
+   </div>
+   <div class="card clinical-card">
+     <div class="head"><h3>Insurance</h3>${headActions(p.insurance.length, 'warn', 'openInsuranceModal()')}</div>
+     ${p.insurance.length ? p.insurance.map(ins=>`<div class="clinical-row"><div class="k">${ins.payor}</div><div class="v" style="display:flex;align-items:center;gap:6px;justify-content:flex-end"><span>${capitalize(ins.policyType)} · ${ACCEPTANCE_STATUS_LABELS[ins.acceptanceStatus]||ins.acceptanceStatus}</span>${rowActions(`openInsuranceModal(${ins.id})`,`deleteInsurance(${ins.id})`)}</div></div>`).join('')
+     : '<div class="clinical-row"><div class="k">No insurance on file</div><div class="v"></div></div>'}
+   </div>
+   <div class="card clinical-card">
+     <div class="head"><h3>Pharmacy</h3><div style="display:flex;align-items:center;gap:8px"><span class="badge ${p.pharmacy?'ok':'warn'}">${p.pharmacy?'On file':'Not set'}</span><button class="btn ghost" style="padding:5px 9px;font-size:11px" onclick="openPharmacyModal()">${p.pharmacy?'Edit':'+ Add'}</button></div></div>
+     ${p.pharmacy ? `<div class="clinical-row"><div class="k">${p.pharmacy.name}</div><div class="v" style="display:flex;align-items:center;gap:6px;justify-content:flex-end"><span>${PHARMACY_TYPE_LABELS[p.pharmacy.type]||p.pharmacy.type}</span><button class="btn ghost" style="padding:3px 7px;font-size:11px" onclick="deletePharmacy()">×</button></div></div>
+      <div class="clinical-row"><div class="k">Phone</div><div class="v">${p.pharmacy.phone||'—'}</div></div>
+      <div class="clinical-row"><div class="k">Address</div><div class="v">${p.pharmacy.address||'—'}</div></div>`
+     : '<div class="clinical-row"><div class="k">No pharmacy on file</div><div class="v"></div></div>'}
    </div>`;
 }
 
@@ -1720,7 +1834,7 @@ function nextMrn(){
  const nums=DB.customers.list().map(c=>parseInt(c.mrn,10)).filter(n=>!isNaN(n));
  return String((nums.length?Math.max(...nums):101000)+1);
 }
-let intakeAllergies=[], intakeConditions=[], intakeMedications=[], intakeSkinHistory=[];
+let intakeAllergies=[], intakeConditions=[], intakeMedications=[], intakeSkinHistory=[], intakeInsurance=[];
 function renderStagedList(containerId, items, labelFn, removeFn){
  const el=document.getElementById(containerId);
  el.innerHTML = items.map((item,i)=>`<div class="clinical-row"><div class="k">${labelFn(item)}</div><div class="v"><button class="btn ghost" style="padding:2px 7px;font-size:11px" onclick="${removeFn}(${i})">×</button></div></div>`).join('');
@@ -1775,13 +1889,36 @@ function addIntakeSkinHistory(){
 }
 function removeIntakeSkinHistory(i){ intakeSkinHistory.splice(i,1); renderIntakeSkinHistory(); }
 
+function renderIntakeInsurance(){ renderStagedList('intakeInsuranceList', intakeInsurance, ins=>`${ins.payor} · ${capitalize(ins.policyType)} · ${INSURANCE_STATUS_LABELS[ins.status]}`, 'removeIntakeInsurance'); }
+function addIntakeInsurance(){
+ const payor=document.getElementById('iiPayor').value.trim();
+ if(!payor){ toast('Payor is required'); return; }
+ intakeInsurance.push({
+  payor,
+  policyType:document.getElementById('iiPolicyType').value,
+  policyNumber:document.getElementById('iiPolicyNumber').value.trim(),
+  policyHolder:document.getElementById('iiPolicyHolder').value.trim(),
+  memberId:document.getElementById('iiMemberId').value.trim(),
+  status:document.getElementById('iiStatus').value,
+  acceptanceStatus:document.getElementById('iiAcceptanceStatus').value
+ });
+ document.getElementById('iiPayor').value='';
+ document.getElementById('iiPolicyNumber').value='';
+ document.getElementById('iiPolicyHolder').value='';
+ document.getElementById('iiMemberId').value='';
+ renderIntakeInsurance();
+}
+function removeIntakeInsurance(i){ intakeInsurance.splice(i,1); renderIntakeInsurance(); }
+
 function resetIntakeSections(){
- intakeAllergies=[]; intakeConditions=[]; intakeMedications=[]; intakeSkinHistory=[];
- renderIntakeAllergies(); renderIntakeConditions(); renderIntakeMedications(); renderIntakeSkinHistory();
+ intakeAllergies=[]; intakeConditions=[]; intakeMedications=[]; intakeSkinHistory=[]; intakeInsurance=[];
+ renderIntakeAllergies(); renderIntakeConditions(); renderIntakeMedications(); renderIntakeSkinHistory(); renderIntakeInsurance();
  document.getElementById('iaSubstance').value='';
  document.getElementById('icName').value='';
  document.getElementById('imName').value=''; document.getElementById('imDose').value='';
  document.getElementById('isLabel').value=''; document.getElementById('isDiagnosis').value=''; document.getElementById('isPhoto').value='';
+ document.getElementById('iiPayor').value=''; document.getElementById('iiPolicyNumber').value=''; document.getElementById('iiPolicyHolder').value=''; document.getElementById('iiMemberId').value='';
+ document.getElementById('ipName').value=''; document.getElementById('ipPhone').value=''; document.getElementById('ipFax').value=''; document.getElementById('ipAddress').value=''; document.getElementById('ipType').value='retail';
 }
 function openNewPatient(){
  editingCustomerId=null;
@@ -1840,10 +1977,19 @@ function savePatientModal(){
   switchPatient(editingCustomerId);
   toast('Patient updated');
  } else {
-  const created=DB.customers.create({...payload, mrn:nextMrn(), status:'active'});
+  const pharmacyName=document.getElementById('ipName').value.trim();
+  const pharmacy = pharmacyName ? {
+   name:pharmacyName,
+   type:document.getElementById('ipType').value,
+   phone:document.getElementById('ipPhone').value.trim(),
+   fax:document.getElementById('ipFax').value.trim(),
+   address:document.getElementById('ipAddress').value.trim()
+  } : null;
+  const created=DB.customers.create({...payload, mrn:nextMrn(), status:'active', pharmacy});
   intakeAllergies.forEach(a=>DB.allergies.create({customerId:created.id, substance:a.substance, severity:a.severity}));
   intakeConditions.forEach(c=>DB.conditions.create({customerId:created.id, name:c.name, status:c.status}));
   intakeMedications.forEach(m=>DB.medications.create({customerId:created.id, name:m.name, dose:m.dose, status:m.status}));
+  intakeInsurance.forEach(ins=>DB.insurance.create({customerId:created.id, ...ins}));
   intakeSkinHistory.forEach(s=>{
    const site=DB.skinSites.create({
     customerId:created.id, title:s.label, diagnosis:s.diagnosis, procedure:'',
@@ -1865,11 +2011,12 @@ function deleteCurrentPatient(){
  const c=DB.customers.get(currentPatientId);
  if(!c) return;
  if(DB.customers.list().length<=1){ toast('Cannot delete the only remaining patient'); return; }
- if(!confirm(`Delete ${c.firstName} ${c.lastName}? This also removes their allergies, conditions, medications, schedule, skin sites, visit notes, clinical photos, and message threads.`)) return;
+ if(!confirm(`Delete ${c.firstName} ${c.lastName}? This also removes their allergies, conditions, medications, insurance, schedule, skin sites, visit notes, clinical photos, and message threads.`)) return;
  const id=c.id;
  DB.allergiesForCustomer(id).forEach(a=>DB.allergies.remove(a.id));
  DB.conditionsForCustomer(id).forEach(cn=>DB.conditions.remove(cn.id));
  DB.medicationsForCustomer(id).forEach(m=>DB.medications.remove(m.id));
+ DB.insuranceForCustomer(id).forEach(i=>DB.insurance.remove(i.id));
  DB.scheduleForCustomer(id).forEach(a=>DB.schedule.remove(a.id));
  DB.skinSitesForCustomer(id).forEach(s=>DB.skinSites.remove(s.id));
  DB.visitNotesForCustomer(id).forEach(n=>DB.visitNotes.remove(n.id));
@@ -2045,6 +2192,78 @@ function deleteMedication(id){
  toast('Medication removed');
 }
 
+let editingInsuranceId=null;
+function openInsuranceModal(id){
+ editingInsuranceId=id||null;
+ const rec=id?DB.insurance.get(id):null;
+ document.getElementById('insuranceModalTitle').textContent=id?'Edit Insurance':'Add Insurance';
+ document.getElementById('inPayor').value=rec?rec.payor:'';
+ document.getElementById('inPolicyType').value=rec?rec.policyType:'primary';
+ document.getElementById('inPolicyNumber').value=rec?rec.policyNumber:'';
+ document.getElementById('inPolicyHolder').value=rec?rec.policyHolder:'';
+ document.getElementById('inMemberId').value=rec?rec.memberId:'';
+ document.getElementById('inStatus').value=rec?rec.status:'active';
+ document.getElementById('inAcceptanceStatus').value=rec?rec.acceptanceStatus:'accepted';
+ document.getElementById('insuranceModal').classList.add('open');
+}
+function closeInsuranceModal(){ document.getElementById('insuranceModal').classList.remove('open'); }
+function saveInsuranceModal(){
+ const payor=document.getElementById('inPayor').value.trim();
+ if(!payor){ toast('Payor is required'); return; }
+ const payload={
+  payor,
+  policyType:document.getElementById('inPolicyType').value,
+  policyNumber:document.getElementById('inPolicyNumber').value.trim(),
+  policyHolder:document.getElementById('inPolicyHolder').value.trim(),
+  memberId:document.getElementById('inMemberId').value.trim(),
+  status:document.getElementById('inStatus').value,
+  acceptanceStatus:document.getElementById('inAcceptanceStatus').value
+ };
+ if(editingInsuranceId){ DB.insurance.update(editingInsuranceId, payload); }
+ else { DB.insurance.create({customerId:currentPatientId, ...payload}); }
+ closeInsuranceModal();
+ renderPatientContext();
+ toast(editingInsuranceId?'Insurance updated':'Insurance added');
+}
+function deleteInsurance(id){
+ DB.insurance.remove(id);
+ renderPatientContext();
+ toast('Insurance removed');
+}
+
+function openPharmacyModal(){
+ const c=DB.customers.get(currentPatientId);
+ const rec=c?c.pharmacy:null;
+ document.getElementById('pharmacyModalTitle').textContent=rec?'Edit Pharmacy':'Add Pharmacy';
+ document.getElementById('phName').value=rec?rec.name:'';
+ document.getElementById('phType').value=rec?rec.type:'retail';
+ document.getElementById('phPhone').value=rec?rec.phone:'';
+ document.getElementById('phFax').value=rec?rec.fax:'';
+ document.getElementById('phAddress').value=rec?rec.address:'';
+ document.getElementById('pharmacyModal').classList.add('open');
+}
+function closePharmacyModal(){ document.getElementById('pharmacyModal').classList.remove('open'); }
+function savePharmacyModal(){
+ const name=document.getElementById('phName').value.trim();
+ if(!name){ toast('Pharmacy name is required'); return; }
+ const pharmacy={
+  name,
+  type:document.getElementById('phType').value,
+  phone:document.getElementById('phPhone').value.trim(),
+  fax:document.getElementById('phFax').value.trim(),
+  address:document.getElementById('phAddress').value.trim()
+ };
+ DB.customers.update(currentPatientId, {pharmacy});
+ closePharmacyModal();
+ renderPatientContext();
+ toast('Pharmacy saved');
+}
+function deletePharmacy(){
+ DB.customers.update(currentPatientId, {pharmacy:null});
+ renderPatientContext();
+ toast('Pharmacy removed');
+}
+
 document.querySelectorAll('.rail-btn,.tab').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.view)));
 document.getElementById('newModal').addEventListener('click',e=>{if(e.target.id==='newModal')closeNew()});
 document.getElementById('siteModal').addEventListener('click',e=>{if(e.target.id==='siteModal')cancelPlacement()});
@@ -2053,6 +2272,8 @@ document.getElementById('providerModal').addEventListener('click',e=>{if(e.targe
 document.getElementById('allergyModal').addEventListener('click',e=>{if(e.target.id==='allergyModal')closeAllergyModal()});
 document.getElementById('conditionModal').addEventListener('click',e=>{if(e.target.id==='conditionModal')closeConditionModal()});
 document.getElementById('medicationModal').addEventListener('click',e=>{if(e.target.id==='medicationModal')closeMedicationModal()});
+document.getElementById('insuranceModal').addEventListener('click',e=>{if(e.target.id==='insuranceModal')closeInsuranceModal()});
+document.getElementById('pharmacyModal').addEventListener('click',e=>{if(e.target.id==='pharmacyModal')closePharmacyModal()});
 document.getElementById('examModal').addEventListener('click',e=>{if(e.target.id==='examModal')closeExamModal()});
 document.getElementById('photoModal').addEventListener('click',e=>{if(e.target.id==='photoModal')closePhotoModal()});
 document.getElementById('search').addEventListener('input',e=>{
