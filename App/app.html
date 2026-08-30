@@ -114,10 +114,27 @@ button{cursor:pointer}
 .form-section input,.form-section textarea,.form-section select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px}
 .note-paper{background:#fff;border:1px solid #d7dce2;border-radius:10px;padding:26px;min-height:640px;box-shadow:0 8px 24px rgba(30,40,55,.08)}
 .note-paper h1{font-size:20px;margin:0}.note-paper h2{font-size:13px;margin:22px 0 5px;text-transform:uppercase}.note-paper p{font-size:12px;line-height:1.55;margin:4px 0}
-.messages{display:grid;grid-template-columns:320px 1fr;gap:16px}
-.thread-list{padding:10px}.thread{padding:12px;border-radius:12px;cursor:pointer}.thread.active,.thread:hover{background:var(--purple3)}
-.chat{padding:15px;display:flex;flex-direction:column;min-height:560px}
-.bubble{max-width:74%;background:#eef1f4;padding:11px 13px;border-radius:14px;margin:6px 0;font-size:13px}.bubble.me{margin-left:auto;background:#e8dcfa}
+.messages{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
+.thread-list{padding:10px;max-height:calc(100vh - 220px);overflow-y:auto}
+.inbox-head{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px}
+.inbox-head h3{margin:0}
+.thread{padding:12px;border-radius:12px;cursor:pointer;border-bottom:1px solid #f0f1f4}
+.thread:last-child{border-bottom:0}
+.thread.active,.thread:hover{background:var(--purple3)}
+.thread .row1{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.thread .from{font-weight:900;font-size:13px}
+.thread .time{font-size:10px;color:var(--muted);white-space:nowrap}
+.thread .subject{font-size:12px;font-weight:700;margin-top:2px}
+.thread .snippet{font-size:11px;color:var(--muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.thread .meta-row{display:flex;align-items:center;gap:6px;margin-top:7px}
+.chat{padding:18px;display:flex;flex-direction:column;min-height:560px}
+.email-thread-head{border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px}
+.email-list{display:grid;gap:12px}
+.email-item{border:1px solid var(--line);border-radius:13px;padding:14px}
+.email-item .email-head{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--muted);margin-bottom:9px;flex-wrap:wrap}
+.email-item .email-head b{color:var(--ink)}
+.email-item .email-body{font-size:13px;line-height:1.55;white-space:pre-wrap}
+.email-actions{display:flex;gap:6px;margin-top:10px}
 .compose{display:flex;gap:8px;margin-top:auto;padding-top:15px}.compose input{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px}
 .modal{position:fixed;inset:0;background:rgba(20,24,36,.4);display:none;align-items:center;justify-content:center;z-index:90;padding:18px}
 .modal.open{display:flex}.modal-card{width:min(560px,100%);max-height:88vh;overflow-y:auto;background:#fff;border-radius:18px;padding:18px;box-shadow:0 30px 70px rgba(0,0,0,.2)}
@@ -390,7 +407,10 @@ button{cursor:pointer}
 
         <section class="view" id="messages">
           <div class="messages">
-            <div class="card thread-list" id="threadList"></div>
+            <div class="card thread-list">
+              <div class="inbox-head"><h3>Inbox</h3><button class="btn primary" style="padding:7px 10px;font-size:12px" onclick="openComposeMessage()">+ Compose</button></div>
+              <div id="threadList"></div>
+            </div>
             <div class="card chat" id="chat"></div>
           </div>
         </section>
@@ -677,6 +697,12 @@ let currentPatientId;
 let selectedSite;
 let currentThread;
 let editingMessageId=null;
+let composeMode=false;
+const THREAD_STATUS_META = {
+ resolved:{label:'Resolved', cls:'ok'},
+ awaiting_patient:{label:'Awaiting Patient', cls:'warn'},
+ awaiting_staff:{label:'Awaiting Staff', cls:'danger'}
+};
 
 function siteMarkerColor(s){
  if(s.status==='active')return '#b14f52';
@@ -919,6 +945,19 @@ function formatTime(t){
  const ampm = h>=12?'PM':'AM';
  h = h%12; if(h===0) h=12;
  return `${h}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+function escapeHtml(str){
+ return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function formatDateTime(iso){
+ if(!iso) return '';
+ const datePart = iso.slice(0,10)===TODAY ? 'Today' : isoDateToUS(iso.slice(0,10));
+ const timePart = new Date(iso).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+ return `${datePart} · ${timePart}`;
+}
+function sessionFromLabel(){
+ const s=getSession();
+ return s ? `${s.username} (${ROLE_LABELS[s.role]||s.role})` : 'Staff';
 }
 function displayProviderName(u){
  if(!u) return '';
@@ -1491,38 +1530,55 @@ function fillSampleNote(){
  updateNote();
 }
 function renderThreads(){
- const rows=DB.messageThreads.list();
- document.getElementById('threadList').innerHTML=rows.map(t=>{
+ const rows=DB.messageThreads.list().slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
+ document.getElementById('threadList').innerHTML = rows.length ? rows.map(t=>{
   const c=DB.customers.get(t.customerId);
   const name=c?`${c.firstName} ${c.lastName}`:'Unknown';
-  return `<div class="thread ${t.id===currentThread?'active':''}" onclick="selectThread(${t.id})">
-   <div style="display:flex;justify-content:space-between;gap:6px;align-items:flex-start">
-    <div><b>${name}</b><div class="small">${t.subject}</div></div>
-    <button class="btn ghost" style="padding:3px 7px;font-size:11px" onclick="event.stopPropagation();deleteThread(${t.id})">✕</button>
+  const msgs=DB.messagesForThread(t.id);
+  const last=msgs[msgs.length-1];
+  const snippet=last?escapeHtml(last.body).slice(0,90):'';
+  const meta=THREAD_STATUS_META[t.status]||{label:t.status,cls:''};
+  const active = !composeMode && t.id===currentThread;
+  return `<div class="thread ${active?'active':''}" onclick="selectThread(${t.id})">
+   <div class="row1"><span class="from">${escapeHtml(name)}</span><span class="time">${last?formatDateTime(last.createdAt):''}</span></div>
+   <div class="subject">${escapeHtml(t.subject)}</div>
+   <div class="snippet">${snippet}</div>
+   <div class="meta-row">
+    <span class="badge ${meta.cls}">${meta.label}</span>
+    <button class="btn ghost" style="padding:2px 7px;font-size:10px;margin-left:auto" onclick="event.stopPropagation();deleteThread(${t.id})">✕</button>
    </div>
   </div>`;
- }).join('');
+ }).join('') : '<div class="small" style="padding:10px">No message threads. Click + Compose to start one.</div>';
 }
-function selectThread(id){ currentThread=id; editingMessageId=null; renderThreads(); renderChat(); }
+function selectThread(id){ currentThread=id; editingMessageId=null; composeMode=false; renderThreads(); renderChat(); }
+function openComposeMessage(){ composeMode=true; editingMessageId=null; renderThreads(); renderChat(); }
+function cancelCompose(){ composeMode=false; renderThreads(); renderChat(); }
 function renderChat(){
  const chatEl=document.getElementById('chat');
+ if(composeMode){ renderComposeForm(chatEl); return; }
  const t=DB.messageThreads.get(currentThread);
- if(!t){ chatEl.innerHTML='<div class="small">No message threads.</div>'; return; }
+ if(!t){ chatEl.innerHTML='<div class="small">No message threads. Click + Compose to start one.</div>'; return; }
  const c=DB.customers.get(t.customerId);
+ const patientName=c?`${c.firstName} ${c.lastName}`:'Unknown';
  const msgs=DB.messagesForThread(t.id);
- const bubbles=msgs.map(m=>{
-  const align=m.direction==='outbound'?'flex-end':'flex-start';
-  return `<div style="display:flex;flex-direction:column;align-items:${align}">
-    <div class="bubble ${m.direction==='outbound'?'me':''}">${m.body}</div>
-    <div style="display:flex;gap:6px;margin:-2px 2px 6px">
-      <button class="btn ghost" style="padding:2px 6px;font-size:10px" onclick="startEditMessage(${m.id})">Edit</button>
-      <button class="btn ghost" style="padding:2px 6px;font-size:10px" onclick="deleteMessage(${m.id})">×</button>
+ const items=msgs.map(m=>{
+  const from = m.direction==='outbound' ? sessionFromLabel() : patientName;
+  const to = m.direction==='outbound' ? patientName : 'Care Team';
+  return `<div class="email-item">
+    <div class="email-head">
+     <div><b>From:</b> ${escapeHtml(from)} &nbsp; <b>To:</b> ${escapeHtml(to)}</div>
+     <div>${formatDateTime(m.createdAt)}</div>
+    </div>
+    <div class="email-body">${escapeHtml(m.body)}</div>
+    <div class="email-actions">
+     <button class="btn ghost" style="padding:3px 8px;font-size:11px" onclick="startEditMessage(${m.id})">Edit</button>
+     <button class="btn ghost" style="padding:3px 8px;font-size:11px" onclick="deleteMessage(${m.id})">Delete</button>
     </div>
    </div>`;
  }).join('');
  const cancelBtn=editingMessageId?'<button class="btn ghost" onclick="cancelEditMessage()">Cancel</button>':'';
- chatEl.innerHTML=`<div><h3 style="margin:0">${c?`${c.firstName} ${c.lastName}`:'Unknown'}</h3><div class="small">${t.subject}</div></div>
-  <div style="margin-top:14px">${bubbles}</div>
+ chatEl.innerHTML=`<div class="email-thread-head"><h3 style="margin:0">${escapeHtml(t.subject)}</h3><div class="small">${escapeHtml(patientName)} · ${msgs.length} message${msgs.length===1?'':'s'}</div></div>
+  <div class="email-list">${items}</div>
   <div class="compose">
    <input id="reply" placeholder="Write a reply...">
    ${cancelBtn}
@@ -1532,6 +1588,50 @@ function renderChat(){
   const m=DB.messages.get(editingMessageId);
   if(m) document.getElementById('reply').value=m.body;
  }
+}
+function renderComposeForm(chatEl){
+ const patients=DB.customers.list();
+ chatEl.innerHTML=`<div class="email-thread-head"><h3 style="margin:0">New Message</h3></div>
+  <div class="form-section"><label>To</label><select id="composeTo" onchange="updateComposeFrom()">${patients.map(p=>`<option value="${p.id}">${escapeHtml(p.firstName+' '+p.lastName)}</option>`).join('')}</select></div>
+  <div class="form-section"><label>From</label><input id="composeFrom" disabled></div>
+  <div class="form-section"><label>Subject</label><input id="composeSubject" placeholder="Subject"></div>
+  <div class="form-section" style="display:flex;align-items:center;gap:8px">
+   <input type="checkbox" id="composeOutbound" checked onchange="updateComposeFrom()" style="width:auto">
+   <label style="margin:0" for="composeOutbound">This is an outbound message (staff → patient)</label>
+  </div>
+  <div class="form-section"><label>Message</label><textarea id="composeBody" rows="8" placeholder="Write your message..."></textarea></div>
+  <div class="modal-actions" style="margin-top:0">
+   <button class="btn ghost" onclick="cancelCompose()">Cancel</button>
+   <button class="btn primary" onclick="sendComposeMessage()">Send</button>
+  </div>`;
+ document.getElementById('composeTo').value = String(currentPatientId || patients[0]?.id || '');
+ updateComposeFrom();
+}
+function updateComposeFrom(){
+ const outbound=document.getElementById('composeOutbound').checked;
+ const patient=DB.customers.get(+document.getElementById('composeTo').value);
+ const patientName=patient?`${patient.firstName} ${patient.lastName}`:'Patient';
+ document.getElementById('composeFrom').value = outbound ? sessionFromLabel() : `${patientName} (Patient)`;
+}
+function sendComposeMessage(){
+ const customerId=+document.getElementById('composeTo').value;
+ const subject=document.getElementById('composeSubject').value.trim();
+ const body=document.getElementById('composeBody').value.trim();
+ const outbound=document.getElementById('composeOutbound').checked;
+ if(!subject){ toast('Subject is required'); return; }
+ if(!body){ toast('Message body is required'); return; }
+ const thread=DB.messageThreads.create({customerId, subject, status: outbound?'awaiting_patient':'awaiting_staff', priority:'normal', ownerUserId:CURRENT_USER_ID});
+ DB.sendMessage(thread.id, {
+  body,
+  senderType: outbound?'staff':'patient',
+  senderId: outbound?CURRENT_USER_ID:customerId,
+  direction: outbound?'outbound':'inbound'
+ });
+ composeMode=false;
+ currentThread=thread.id;
+ renderThreads();
+ renderChat();
+ toast('Message sent');
 }
 function startEditMessage(id){
  editingMessageId=id;
@@ -1553,6 +1653,7 @@ function sendReply(){
   DB.sendMessage(currentThread, {body, senderType:'staff', senderId:CURRENT_USER_ID, direction:'outbound'});
   toast('Message sent');
  }
+ renderThreads();
  renderChat();
 }
 function deleteMessage(id){
@@ -1565,7 +1666,7 @@ function deleteThread(id){
  DB.messages.list(m=>m.threadId===id).forEach(m=>DB.messages.remove(m.id));
  DB.messageThreads.remove(id);
  if(currentThread===id){
-  const remaining=DB.messageThreads.list();
+  const remaining=DB.messageThreads.list().slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
   currentThread = remaining.length ? remaining[0].id : null;
   editingMessageId=null;
  }
@@ -2013,7 +2114,7 @@ async function boot(){
  }
  currentPatientId = DB.customers.list()[0]?.id ?? null;
  selectedSite = DB.skinSitesForCustomer(currentPatientId)[0]?.id ?? null;
- currentThread = DB.messageThreads.list()[0]?.id ?? null;
+ currentThread = DB.messageThreads.list().slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt))[0]?.id ?? null;
  document.getElementById('schedFilterDate').value=TODAY;
  renderPatientSwitcher();
  renderPatientContext();
