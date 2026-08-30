@@ -395,8 +395,10 @@ button{cursor:pointer}
   </div>
 </div>
 <div class="modal" id="providerModal">
-  <div class="modal-card">
-    <h3>New Provider / Staff</h3>
+  <div class="modal-card" style="width:min(640px,100%)">
+    <h3>Providers &amp; Staff</h3>
+    <div id="providerList" style="margin-bottom:16px;max-height:240px;overflow:auto"></div>
+    <h3 id="providerFormTitle" style="font-size:14px;margin-bottom:10px">Add Provider</h3>
     <div class="form-grid">
       <div><label class="small">First Name</label><input id="pvFirst" class="btn" style="width:100%"></div>
       <div><label class="small">Last Name</label><input id="pvLast" class="btn" style="width:100%"></div>
@@ -412,7 +414,7 @@ button{cursor:pointer}
       <div class="full"><label class="small">Specialty</label><input id="pvSpecialty" class="btn" style="width:100%" placeholder="Optional"></div>
       <div class="full"><label class="small">Email</label><input id="pvEmail" class="btn" style="width:100%" placeholder="Optional"></div>
     </div>
-    <div class="modal-actions"><button class="btn" onclick="closeProviderModal()">Cancel</button><button class="btn primary" onclick="saveNewProvider()">Save</button></div>
+    <div class="modal-actions"><button class="btn" id="providerCancelEditBtn" style="display:none" onclick="resetProviderForm()">Cancel Edit</button><button class="btn" onclick="closeProviderModal()">Close</button><button class="btn primary" onclick="saveProviderModal()">Save</button></div>
   </div>
 </div>
 <div class="modal" id="allergyModal">
@@ -1162,30 +1164,83 @@ function deleteCurrentPatient(){
  toast('Patient deleted');
 }
 
-function openNewProvider(){
+let editingProviderId=null;
+function roleLabel(role){
+ return {physician:'Physician', nurse:'Nurse', medical_assistant:'Medical Assistant', front_desk:'Front Desk'}[role] || role;
+}
+function renderProviderList(){
+ const rows=DB.users.list();
+ document.getElementById('providerList').innerHTML = rows.length ? rows.map(u=>`<div class="clinical-row">
+   <div class="k">${displayProviderName(u)}</div>
+   <div class="v" style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+     <span class="small">${roleLabel(u.role)}${u.credentials?' · '+u.credentials:''}</span>
+     <button class="btn ghost" style="padding:3px 7px;font-size:11px" onclick="openEditProvider(${u.id})">Edit</button>
+     <button class="btn ghost" style="padding:3px 7px;font-size:11px" onclick="deleteProvider(${u.id})">×</button>
+   </div>
+ </div>`).join('') : '<div class="small" style="padding:8px 0">No providers or staff on file.</div>';
+}
+function resetProviderForm(){
+ editingProviderId=null;
+ document.getElementById('providerFormTitle').textContent='Add Provider';
+ document.getElementById('providerCancelEditBtn').style.display='none';
  document.getElementById('pvFirst').value='';
  document.getElementById('pvLast').value='';
  document.getElementById('pvRole').value='physician';
  document.getElementById('pvCredentials').value='';
  document.getElementById('pvSpecialty').value='';
  document.getElementById('pvEmail').value='';
+}
+function openNewProvider(){
+ resetProviderForm();
+ renderProviderList();
  document.getElementById('providerModal').classList.add('open');
 }
+function openEditProvider(id){
+ const u=DB.users.get(id);
+ if(!u) return;
+ editingProviderId=id;
+ document.getElementById('providerFormTitle').textContent='Edit Provider';
+ document.getElementById('providerCancelEditBtn').style.display='inline-block';
+ document.getElementById('pvFirst').value=u.firstName;
+ document.getElementById('pvLast').value=u.lastName;
+ document.getElementById('pvRole').value=u.role;
+ document.getElementById('pvCredentials').value=u.credentials||'';
+ document.getElementById('pvSpecialty').value=u.specialty||'';
+ document.getElementById('pvEmail').value=u.email||'';
+}
 function closeProviderModal(){ document.getElementById('providerModal').classList.remove('open'); }
-function saveNewProvider(){
+function saveProviderModal(){
  const firstName=document.getElementById('pvFirst').value.trim();
  const lastName=document.getElementById('pvLast').value.trim();
  if(!firstName||!lastName){ toast('First and last name are required'); return; }
- const created=DB.users.create({
+ const payload={
   firstName, lastName,
   role: document.getElementById('pvRole').value,
   credentials: document.getElementById('pvCredentials').value.trim(),
   specialty: document.getElementById('pvSpecialty').value.trim(),
-  email: document.getElementById('pvEmail').value.trim(),
-  active: true
- });
- closeProviderModal();
- toast(`${displayProviderName(created)} added`);
+  email: document.getElementById('pvEmail').value.trim()
+ };
+ if(editingProviderId){
+  DB.users.update(editingProviderId, payload);
+  toast('Provider updated');
+ } else {
+  DB.users.create({...payload, active:true});
+  toast('Provider added');
+ }
+ resetProviderForm();
+ renderProviderList();
+ renderSchedule();
+}
+function deleteProvider(id){
+ if(DB.users.list().length<=1){ toast('Cannot delete the only remaining provider'); return; }
+ const u=DB.users.get(id);
+ if(!u) return;
+ if(!confirm(`Delete ${displayProviderName(u)}? Existing schedule entries and visit notes referencing them will show no provider assigned.`)) return;
+ DB.users.remove(id);
+ if(editingProviderId===id) resetProviderForm();
+ renderProviderList();
+ renderSchedule();
+ toast('Provider deleted');
 }
 
 let editingAllergyId=null;
