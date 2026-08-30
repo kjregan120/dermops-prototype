@@ -125,6 +125,16 @@ button{cursor:pointer}
 .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 .mobile-bottom{display:none}
 .toast{position:fixed;right:18px;bottom:20px;background:#1d2330;color:#fff;padding:11px 14px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;z-index:100}
+.login-screen{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--purple),#2c105f);padding:18px}
+.login-card{width:min(380px,100%);background:#fff;border-radius:18px;padding:28px 26px;box-shadow:0 30px 70px rgba(0,0,0,.28)}
+.login-brand{font-weight:900;font-size:22px;color:var(--purple)}
+.login-sub{font-size:13px;color:var(--muted);margin:4px 0 20px}
+.login-card .form-section{margin-bottom:14px}
+.login-card label{display:block;font-size:11px;color:var(--muted);font-weight:900;margin-bottom:6px}
+.login-card input,.login-card select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px}
+.login-error{background:#fae5e5;color:#9b3d3d;font-size:12px;font-weight:700;border-radius:9px;padding:9px 11px;margin-bottom:14px}
+.login-hint{font-size:11px;color:var(--muted);text-align:center;margin:16px 0 0}
+.session-badge{font-size:11px;color:#d9ccef;white-space:nowrap}
 @media(max-width:1050px){
   .grid,.body-layout,.note-layout,.messages{grid-template-columns:1fr}
   .quick-grid{grid-template-columns:1fr 1fr}
@@ -153,17 +163,37 @@ button{cursor:pointer}
 </style>
 </head>
 <body>
-<div class="app">
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-brand">DermaOps</div>
+    <p class="login-sub">Sign in to continue</p>
+    <div id="loginError" class="login-error" style="display:none"></div>
+    <div class="form-section"><label>Username</label><input id="loginUsername" placeholder="Username" autocomplete="username"></div>
+    <div class="form-section"><label>Password</label><input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password"></div>
+    <div class="form-section"><label>Role</label>
+      <select id="loginRole">
+        <option value="physician">Physician (Dr.)</option>
+        <option value="pa">PA</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <button class="btn primary" style="width:100%" onclick="attemptLogin()">Sign In</button>
+    <p class="login-hint">Demo credentials: Admin / Admin</p>
+  </div>
+</div>
+<div class="app" id="appRoot" style="display:none">
   <header class="topbar">
     <div class="brand">DermaOps</div>
     <div class="global-search"><input id="search" placeholder="Search patient, MRN, procedure..."></div>
     <div class="top-actions">
+      <span class="session-badge" id="sessionBadge"></span>
       <button class="top-action" onclick="navigate('overview')">⌂<span>Home</span></button>
       <button class="top-action" onclick="navigate('procedure')">✚<span>Exam</span></button>
       <button class="top-action" onclick="toast('Tasks module placeholder')">✓<span>Tasks</span></button>
       <button class="top-action" onclick="toast('Rx module placeholder')">Rx<span>Rx</span></button>
       <button class="top-action" onclick="navigate('messages')">✉<span>Messages</span></button>
       <button class="top-action" onclick="toast('Help module placeholder')">?<span>Help</span></button>
+      <button class="top-action" onclick="logout()">⎋<span>Logout</span></button>
     </div>
   </header>
 
@@ -641,7 +671,7 @@ let scheduleGranularity='day';
 let scheduleAnchorDate=TODAY;
 let scheduleFiltersVisible=false;
 let scheduleFilters={patientId:null, providerId:null, facility:null, status:null};
-const CURRENT_USER_ID = 4; // logged-in support staff for this prototype (no auth yet)
+const CURRENT_USER_ID = 4; // stand-in staff record for message/photo attribution; login is a separate demo-only role gate, not tied to a users.json record
 
 let currentPatientId;
 let selectedSite;
@@ -1931,6 +1961,44 @@ document.getElementById('search').addEventListener('input',e=>{
  if(c && c.id!==currentPatientId) switchPatient(c.id);
 });
 
+const AUTH_KEY = 'dermaops.auth.v1';
+const ROLE_LABELS = { physician:'Dr.', pa:'PA', other:'Staff' };
+function getSession(){
+ try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch(e){ return null; }
+}
+function showLogin(message){
+ document.getElementById('appRoot').style.display='none';
+ document.getElementById('loginScreen').style.display='flex';
+ const err=document.getElementById('loginError');
+ if(message){ err.textContent=message; err.style.display='block'; }
+ else { err.style.display='none'; }
+ document.getElementById('loginUsername').focus();
+}
+function showApp(session){
+ document.getElementById('loginScreen').style.display='none';
+ document.getElementById('appRoot').style.display='';
+ document.getElementById('sessionBadge').textContent = `${session.username} · ${ROLE_LABELS[session.role] || session.role}`;
+ boot();
+}
+function attemptLogin(){
+ const username=document.getElementById('loginUsername').value.trim();
+ const password=document.getElementById('loginPassword').value;
+ const role=document.getElementById('loginRole').value;
+ if(username!=='Admin' || password!=='Admin'){
+  showLogin('Invalid username or password');
+  return;
+ }
+ const session={username, role, at:new Date().toISOString()};
+ localStorage.setItem(AUTH_KEY, JSON.stringify(session));
+ showApp(session);
+}
+function logout(){
+ localStorage.removeItem(AUTH_KEY);
+ location.reload();
+}
+document.getElementById('loginUsername').addEventListener('keydown', e=>{ if(e.key==='Enter') attemptLogin(); });
+document.getElementById('loginPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') attemptLogin(); });
+
 async function boot(){
  try {
   await DB.init();
@@ -1959,7 +2027,10 @@ async function boot(){
  loadNoteForm();
  updateNote(true);
 }
-boot();
+
+const existingSession = getSession();
+if (existingSession) showApp(existingSession);
+else showLogin();
 
 </script>
 </body>
