@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "customerId": 1,
+    "substance": "Penicillin",
+    "severity": "moderate",
+    "createdAt": "2025-01-06T09:00:00.000Z",
+    "updatedAt": "2025-01-06T09:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "customerId": 3,
+    "substance": "Sulfa",
+    "severity": "moderate",
+    "createdAt": "2025-03-30T09:00:00.000Z",
+    "updatedAt": "2025-03-30T09:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "customerId": 4,
+    "substance": "Latex",
+    "severity": "severe",
+    "createdAt": "2025-04-11T09:00:00.000Z",
+    "updatedAt": "2025-04-11T09:00:00.000Z"
+  }
+]

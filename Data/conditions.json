@@ -1,0 +1,66 @@
+[
+  {
+    "id": 1,
+    "customerId": 1,
+    "name": "Hypertension",
+    "status": "active",
+    "createdAt": "2025-01-06T09:00:00.000Z",
+    "updatedAt": "2025-01-06T09:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "customerId": 1,
+    "name": "Diabetes",
+    "status": "inactive",
+    "createdAt": "2025-01-06T09:00:00.000Z",
+    "updatedAt": "2025-01-06T09:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "customerId": 2,
+    "name": "Hyperlipidemia",
+    "status": "active",
+    "createdAt": "2025-02-14T09:00:00.000Z",
+    "updatedAt": "2025-02-14T09:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "customerId": 2,
+    "name": "Hypertension",
+    "status": "active",
+    "createdAt": "2025-02-14T09:00:00.000Z",
+    "updatedAt": "2025-02-14T09:00:00.000Z"
+  },
+  {
+    "id": 5,
+    "customerId": 3,
+    "name": "Acne",
+    "status": "active",
+    "createdAt": "2025-03-30T09:00:00.000Z",
+    "updatedAt": "2025-03-30T09:00:00.000Z"
+  },
+  {
+    "id": 6,
+    "customerId": 3,
+    "name": "PCOS",
+    "status": "history",
+    "createdAt": "2025-03-30T09:00:00.000Z",
+    "updatedAt": "2025-03-30T09:00:00.000Z"
+  },
+  {
+    "id": 7,
+    "customerId": 4,
+    "name": "Type 2 Diabetes",
+    "status": "active",
+    "createdAt": "2025-04-11T09:00:00.000Z",
+    "updatedAt": "2025-04-11T09:00:00.000Z"
+  },
+  {
+    "id": 8,
+    "customerId": 4,
+    "name": "Hypertension",
+    "status": "active",
+    "createdAt": "2025-04-11T09:00:00.000Z",
+    "updatedAt": "2025-04-11T09:00:00.000Z"
+  }
+]

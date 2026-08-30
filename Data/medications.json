@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "customerId": 1,
+    "name": "Lisinopril",
+    "dose": "10 mg",
+    "status": "active",
+    "createdAt": "2025-01-06T09:00:00.000Z",
+    "updatedAt": "2025-01-06T09:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "customerId": 2,
+    "name": "Atorvastatin",
+    "dose": "20 mg",
+    "status": "active",
+    "createdAt": "2025-02-14T09:00:00.000Z",
+    "updatedAt": "2025-02-14T09:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "customerId": 3,
+    "name": "Spironolactone",
+    "dose": "100 mg",
+    "status": "active",
+    "createdAt": "2025-03-30T09:00:00.000Z",
+    "updatedAt": "2025-03-30T09:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "customerId": 4,
+    "name": "Metformin",
+    "dose": "500 mg BID",
+    "status": "active",
+    "createdAt": "2025-04-11T09:00:00.000Z",
+    "updatedAt": "2025-04-11T09:00:00.000Z"
+  },
+  {
+    "id": 5,
+    "customerId": 4,
+    "name": "Amlodipine",
+    "dose": "5 mg",
+    "status": "active",
+    "createdAt": "2025-04-11T09:00:00.000Z",
+    "updatedAt": "2025-04-11T09:00:00.000Z"
+  }
+]

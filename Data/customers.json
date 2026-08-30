@@ -11,16 +11,6 @@
     "email": "",
     "city": "Wilton, CT",
     "status": "active",
-    "allergies": [
-      { "substance": "Penicillin", "severity": "moderate" }
-    ],
-    "conditions": [
-      { "name": "Hypertension", "status": "active" },
-      { "name": "Diabetes", "status": "inactive" }
-    ],
-    "medications": [
-      { "name": "Lisinopril", "dose": "10 mg", "status": "active" }
-    ],
     "createdAt": "2025-01-06T09:00:00.000Z",
     "updatedAt": "2026-08-28T08:00:00.000Z"
   },
@@ -36,14 +26,6 @@
     "email": "",
     "city": "Ridgefield, CT",
     "status": "active",
-    "allergies": [],
-    "conditions": [
-      { "name": "Hyperlipidemia", "status": "active" },
-      { "name": "Hypertension", "status": "active" }
-    ],
-    "medications": [
-      { "name": "Atorvastatin", "dose": "20 mg", "status": "active" }
-    ],
     "createdAt": "2025-02-14T09:00:00.000Z",
     "updatedAt": "2026-08-28T08:30:00.000Z"
   },
@@ -59,16 +41,6 @@
     "email": "",
     "city": "Westport, CT",
     "status": "active",
-    "allergies": [
-      { "substance": "Sulfa", "severity": "moderate" }
-    ],
-    "conditions": [
-      { "name": "Acne", "status": "active" },
-      { "name": "PCOS", "status": "history" }
-    ],
-    "medications": [
-      { "name": "Spironolactone", "dose": "100 mg", "status": "active" }
-    ],
     "createdAt": "2025-03-30T09:00:00.000Z",
     "updatedAt": "2026-08-28T09:00:00.000Z"
   },
@@ -84,17 +56,6 @@
     "email": "",
     "city": "New Canaan, CT",
     "status": "active",
-    "allergies": [
-      { "substance": "Latex", "severity": "severe" }
-    ],
-    "conditions": [
-      { "name": "Type 2 Diabetes", "status": "active" },
-      { "name": "Hypertension", "status": "active" }
-    ],
-    "medications": [
-      { "name": "Metformin", "dose": "500 mg BID", "status": "active" },
-      { "name": "Amlodipine", "dose": "5 mg", "status": "active" }
-    ],
     "createdAt": "2025-04-11T09:00:00.000Z",
     "updatedAt": "2026-08-28T10:00:00.000Z"
   }
