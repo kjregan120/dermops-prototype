@@ -2,8 +2,9 @@
  * DermaOps local data store.
  *
  * Collections: customers, allergies, conditions, medications, users
- * (providers + support staff, distinguished by `role`), appointments,
- * skinSites, visitNotes, messageThreads, messages. allergies/conditions/
+ * (providers + support staff, distinguished by `role`), schedule (booked
+ * visits — formerly "appointments"), skinSites, visitNotes, messageThreads,
+ * messages. allergies/conditions/
  * medications are normalized per SPEC-02 (own id + customerId) rather than
  * nested on the customer record, so each entry can be edited/deleted
  * independently. Schemas and seed content live in /Data/*.json.
@@ -30,13 +31,13 @@ const DB = (() => {
     'conditions',
     'medications',
     'users',
-    'appointments',
+    'schedule',
     'skinSites',
     'visitNotes',
     'messageThreads',
     'messages'
   ];
-  const STORAGE_KEY = 'dermaops.db.v2';
+  const STORAGE_KEY = 'dermaops.db.v3';
   const DATA_BASE = '../Data/';
 
   let state = null;
@@ -123,7 +124,7 @@ const DB = (() => {
   api.allergiesForCustomer = (customerId) => api.allergies.list((r) => r.customerId === customerId);
   api.conditionsForCustomer = (customerId) => api.conditions.list((r) => r.customerId === customerId);
   api.medicationsForCustomer = (customerId) => api.medications.list((r) => r.customerId === customerId);
-  api.appointmentsForCustomer = (customerId) => api.appointments.list((r) => r.customerId === customerId);
+  api.scheduleForCustomer = (customerId) => api.schedule.list((r) => r.customerId === customerId);
   api.skinSitesForCustomer = (customerId) => api.skinSites.list((r) => r.customerId === customerId);
   api.visitNotesForCustomer = (customerId) => api.visitNotes.list((r) => r.customerId === customerId);
   api.threadsForCustomer = (customerId) => api.messageThreads.list((r) => r.customerId === customerId);

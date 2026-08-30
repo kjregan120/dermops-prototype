@@ -2,7 +2,7 @@
   {
     "id": 1,
     "customerId": 1,
-    "appointmentId": 1,
+    "scheduleId": 1,
     "skinSiteId": 1,
     "authorId": 1,
     "noteType": "procedure",
@@ -23,7 +23,7 @@
   {
     "id": 2,
     "customerId": 3,
-    "appointmentId": 3,
+    "scheduleId": 3,
     "skinSiteId": 5,
     "authorId": 2,
     "noteType": "visit",

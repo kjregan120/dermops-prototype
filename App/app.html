@@ -76,7 +76,7 @@ button{cursor:pointer}
 .timeline{display:grid;gap:9px}
 .timeline-item{display:grid;grid-template-columns:92px 1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:13px}
 .timeline-item .time{font-weight:900}.timeline-item .name{font-weight:900}.small{font-size:11px;color:var(--muted)}
-.appointments{padding:14px}
+.schedule{padding:14px}
 .table-scroll{overflow-x:auto}
 .table{width:100%;min-width:560px;border-collapse:collapse}
 .table th,.table td{padding:11px 10px;border-bottom:1px solid #edf0f3;text-align:left;font-size:12px}
@@ -170,7 +170,7 @@ button{cursor:pointer}
   <div class="shell">
     <aside class="rail">
       <button class="rail-btn active" data-view="overview"><span class="ico">⌂</span>Overview</button>
-      <button class="rail-btn" data-view="appointments"><span class="ico">▦</span>Appointments</button>
+      <button class="rail-btn" data-view="schedule"><span class="ico">▦</span>Schedule</button>
       <button class="rail-btn" data-view="bodymap"><span class="ico">◉</span>Body Map</button>
       <button class="rail-btn" data-view="procedure"><span class="ico">✚</span>Exam</button>
       <button class="rail-btn" data-view="visitnote"><span class="ico">▤</span>Visit Note</button>
@@ -198,7 +198,7 @@ button{cursor:pointer}
 
       <nav class="patient-tabs">
         <button class="tab active" data-view="overview">Overview</button>
-        <button class="tab" data-view="appointments">Appointments</button>
+        <button class="tab" data-view="schedule">Schedule</button>
         <button class="tab" data-view="bodymap">Dermatology</button>
         <button class="tab" data-view="procedure">Exam</button>
         <button class="tab" data-view="visitnote">Visit Note</button>
@@ -225,17 +225,17 @@ button{cursor:pointer}
                 </div>
               </div>
 
-              <div class="section-title"><h3>Today’s Patient Timeline</h3><button class="btn ghost" onclick="navigate('appointments')">View all</button></div>
-              <div class="card appointments">
+              <div class="section-title"><h3>Today’s Patient Timeline</h3><button class="btn ghost" onclick="navigate('schedule')">View all</button></div>
+              <div class="card schedule">
                 <div class="timeline" id="timeline"></div>
               </div>
             </div>
           </div>
         </section>
 
-        <section class="view" id="appointments">
-          <div class="card appointments">
-            <div class="section-title" style="margin-top:0"><h3>Appointments</h3><button class="btn primary" onclick="openNew()">＋ Add Appointment</button></div>
+        <section class="view" id="schedule">
+          <div class="card schedule">
+            <div class="section-title" style="margin-top:0"><h3>Schedule</h3><button class="btn primary" onclick="openNew()">＋ Add to Schedule</button></div>
             <div class="table-scroll">
               <table class="table">
                 <thead><tr><th>Patient</th><th>Date</th><th>Time</th><th>Type / Site</th><th>Provider</th><th>Facility</th><th>Status</th><th>Actions</th></tr></thead>
@@ -335,7 +335,7 @@ button{cursor:pointer}
 
 <nav class="mobile-bottom">
   <button onclick="navigate('overview')"><span class="ico">⌂</span>Overview</button>
-  <button onclick="navigate('appointments')"><span class="ico">▦</span>Appts</button>
+  <button onclick="navigate('schedule')"><span class="ico">▦</span>Sched</button>
   <button onclick="navigate('bodymap')"><span class="ico">◉</span>Derm</button>
   <button onclick="navigate('procedure')"><span class="ico">✚</span>Exam</button>
   <button onclick="navigate('visitnote')"><span class="ico">▤</span>Note</button>
@@ -346,9 +346,9 @@ button{cursor:pointer}
   <div class="modal-card">
     <h3>Create New</h3>
     <div class="form-grid">
-      <div><label class="small">Type</label><select id="newKind" class="btn" style="width:100%"><option>Appointment</option><option>Procedure</option><option>Task</option><option>Prescription</option><option>Message</option></select></div>
+      <div><label class="small">Type</label><select id="newKind" class="btn" style="width:100%"><option>Schedule</option><option>Procedure</option><option>Task</option><option>Prescription</option><option>Message</option></select></div>
       <div><label class="small">Patient</label><select id="newPatient" class="btn" style="width:100%"></select></div>
-      <div><label class="small">Appointment Type</label><select id="newApptType" class="btn" style="width:100%"></select></div>
+      <div><label class="small">Schedule Type</label><select id="newApptType" class="btn" style="width:100%"></select></div>
       <div><label class="small">Provider</label><select id="newApptProvider" class="btn" style="width:100%"></select></div>
       <div><label class="small">Date</label><input id="newDate" class="btn" style="width:100%" type="date" value="2026-08-28"></div>
       <div><label class="small">Time</label><input id="newTime" class="btn" style="width:100%" type="time" value="08:00"></div>
@@ -719,14 +719,14 @@ function displayProviderName(u){
  if(!u) return '';
  return u.role==='physician' ? `Dr. ${u.lastName}` : `${u.firstName} ${u.lastName}`.trim();
 }
-function todaysAppointmentFor(customerId){
- const appts = DB.appointmentsForCustomer(customerId);
+function todaysScheduleFor(customerId){
+ const appts = DB.scheduleForCustomer(customerId);
  return appts.find(a=>a.date===TODAY) || appts[0] || null;
 }
 function buildPatientViewModel(customerId){
  const c = DB.customers.get(customerId);
  if(!c) return null;
- const appt = todaysAppointmentFor(customerId);
+ const appt = todaysScheduleFor(customerId);
  const site = appt && appt.skinSiteId ? DB.skinSites.get(appt.skinSiteId) : null;
  const provider = appt ? DB.users.get(appt.providerId) : null;
  const allergies = DB.allergiesForCustomer(customerId);
@@ -740,7 +740,7 @@ function buildPatientViewModel(customerId){
  const apptDisplay = appt ? `${isToday?'Today':isoDateToUS(appt.date)} · ${formatTime(appt.time)}` : '—';
  return {
   id:c.id, customerId:c.id,
-  appointmentId: appt?appt.id:null,
+  scheduleId: appt?appt.id:null,
   skinSiteId: site?site.id:null,
   name:`${c.firstName} ${c.lastName}`,
   dob:isoDateToUS(c.dob),
@@ -772,7 +772,7 @@ function renderPatientContext(){
  document.getElementById('patientMeta').textContent=`DOB ${p.dob} · ${p.sex} · MRN ${p.mrn} · ${p.city}`;
  document.getElementById('patientAlerts').innerHTML=`
    <span class="badge ${p.allergy==='None'?'ok':'danger'}">${p.allergy==='None'?'No known drug allergies':p.allergy+' allergy'}</span>
-   ${p.appointmentId?`<span class="badge warn">${p.dx} · ${p.site}</span><span class="badge ok">${p.appt}</span>`:'<span class="badge">No appointments yet</span>'}`;
+   ${p.scheduleId?`<span class="badge warn">${p.dx} · ${p.site}</span><span class="badge ok">${p.appt}</span>`:'<span class="badge">No schedule yet</span>'}`;
  document.getElementById('heroTitle').textContent=p.headline;
  document.getElementById('heroSub').textContent=p.sub;
  document.getElementById('procedureTitle').textContent=`${p.procedure} · ${p.name}`;
@@ -835,9 +835,9 @@ function renderProcedureState(){
 }
 function advanceProcedure(){
  const p=getPatient(), wf=getWorkflow(p);
- if(!p.appointmentId){ toast('No appointment linked to advance'); return; }
+ if(!p.scheduleId){ toast('No schedule entry linked to advance'); return; }
  if(p.procIndex<wf.steps.length-1){
-  DB.appointments.update(p.appointmentId, {procIndex:p.procIndex+1});
+  DB.schedule.update(p.scheduleId, {procIndex:p.procIndex+1});
  }
  renderProcedureState();
  toast('Advanced to '+wf.steps[getPatient().procIndex]);
@@ -857,8 +857,8 @@ function renderTimeline(){
  if(!data.length){ timelineEl.innerHTML='<div class="small" style="padding:8px 0">No activity recorded yet for this patient today.</div>'; return; }
  timelineEl.innerHTML=data.map(x=>`<div class="timeline-item"><div class="time">${x[0]}</div><div><div class="name">${x[1]}</div><div class="small">${x[2]} · ${x[3]}</div></div><span class="badge">${x[1]}</span></div>`).join('');
 }
-function renderAppointments(){
- const rows=DB.appointments.list();
+function renderSchedule(){
+ const rows=DB.schedule.list();
  document.getElementById('apptRows').innerHTML=rows.map(a=>{
   const c=DB.customers.get(a.customerId);
   const provider=DB.users.get(a.providerId);
@@ -868,21 +868,21 @@ function renderAppointments(){
    <td>${isoDateToUS(a.date)}</td><td>${formatTime(a.time)}</td>
    <td><b>${a.type}</b><div class="small">${a.site||''}</div></td>
    <td>${displayProviderName(provider)}</td><td>${a.facility}</td>
-   <td><select class="status-select" onchange="updateAppointmentStatus(${a.id},this.value)">
+   <td><select class="status-select" onchange="updateScheduleStatus(${a.id},this.value)">
     ${['Pending','Confirmed','Arrived','Checked In','Checked Out','No Show','Cancelled'].map(s=>`<option ${s===a.status?'selected':''}>${s}</option>`).join('')}
    </select></td>
-   <td><button class="btn ghost" onclick="deleteAppointment(${a.id})">Delete</button></td>
+   <td><button class="btn ghost" onclick="deleteSchedule(${a.id})">Delete</button></td>
   </tr>`;
  }).join('');
 }
-function updateAppointmentStatus(id,status){
- DB.appointments.update(id,{status});
+function updateScheduleStatus(id,status){
+ DB.schedule.update(id,{status});
  toast('Status updated');
 }
-function deleteAppointment(id){
- DB.appointments.remove(id);
- renderAppointments();
- toast('Appointment deleted');
+function deleteSchedule(id){
+ DB.schedule.remove(id);
+ renderSchedule();
+ toast('Schedule entry deleted');
 }
 function renderSites(){
  const list=DB.skinSitesForCustomer(currentPatientId);
@@ -931,10 +931,10 @@ function setBodyTab(btn){
 
 let currentNoteId=null, currentNoteStatus=null;
 function currentNoteFor(customerId){
- const appt=todaysAppointmentFor(customerId);
+ const appt=todaysScheduleFor(customerId);
  const notes=DB.visitNotesForCustomer(customerId);
  if(appt){
-  const linked=notes.find(n=>n.appointmentId===appt.id);
+  const linked=notes.find(n=>n.scheduleId===appt.id);
   if(linked) return linked;
  }
  return notes.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt))[0] || null;
@@ -961,9 +961,9 @@ function updateNote(silent){
  } else if(currentNoteId){
   DB.visitNotes.update(currentNoteId, {chiefComplaint:c, exam:e, procedure:proc, stageMargin:sm, repair:r, followUp:f});
  } else {
-  const appt=todaysAppointmentFor(p.customerId);
+  const appt=todaysScheduleFor(p.customerId);
   const created=DB.visitNotes.create({
-   customerId:p.customerId, appointmentId: appt?appt.id:null, skinSiteId: appt?(appt.skinSiteId||null):null,
+   customerId:p.customerId, scheduleId: appt?appt.id:null, skinSiteId: appt?(appt.skinSiteId||null):null,
    authorId: appt?appt.providerId:null, noteType:'visit', status:'draft',
    chiefComplaint:c, exam:e, assessment:'', procedure:proc, stageMargin:sm, repair:r, followUp:f,
    version:1, supersedesId:null, signedAt:null
@@ -1049,12 +1049,12 @@ function openNew(){
 function closeNew(){document.getElementById('newModal').classList.remove('open')}
 function saveNew(){
  const kind=document.getElementById('newKind').value;
- if(kind!=='Appointment'){
+ if(kind!=='Schedule'){
   closeNew();
   toast(kind+' creation isn\'t wired to the data model yet');
   return;
  }
- const created=DB.appointments.create({
+ const created=DB.schedule.create({
   customerId:+document.getElementById('newPatient').value,
   providerId:+document.getElementById('newApptProvider').value,
   type:document.getElementById('newApptType').value,
@@ -1067,9 +1067,9 @@ function saveNew(){
   notes:document.getElementById('newNotes').value.trim()
  });
  closeNew();
- renderAppointments();
+ renderSchedule();
  if(created.customerId===currentPatientId){ renderPatientContext(); renderProcedureState(); }
- toast('Appointment created');
+ toast('Schedule entry created');
 }
 
 let editingCustomerId=null;
@@ -1142,12 +1142,12 @@ function deleteCurrentPatient(){
  const c=DB.customers.get(currentPatientId);
  if(!c) return;
  if(DB.customers.list().length<=1){ toast('Cannot delete the only remaining patient'); return; }
- if(!confirm(`Delete ${c.firstName} ${c.lastName}? This also removes their allergies, conditions, medications, appointments, skin sites, visit notes, and message threads.`)) return;
+ if(!confirm(`Delete ${c.firstName} ${c.lastName}? This also removes their allergies, conditions, medications, schedule, skin sites, visit notes, and message threads.`)) return;
  const id=c.id;
  DB.allergiesForCustomer(id).forEach(a=>DB.allergies.remove(a.id));
  DB.conditionsForCustomer(id).forEach(cn=>DB.conditions.remove(cn.id));
  DB.medicationsForCustomer(id).forEach(m=>DB.medications.remove(m.id));
- DB.appointmentsForCustomer(id).forEach(a=>DB.appointments.remove(a.id));
+ DB.scheduleForCustomer(id).forEach(a=>DB.schedule.remove(a.id));
  DB.skinSitesForCustomer(id).forEach(s=>DB.skinSites.remove(s.id));
  DB.visitNotesForCustomer(id).forEach(n=>DB.visitNotes.remove(n.id));
  DB.threadsForCustomer(id).forEach(t=>{
@@ -1156,7 +1156,7 @@ function deleteCurrentPatient(){
  });
  DB.customers.remove(id);
  const next=DB.customers.list()[0];
- renderAppointments();
+ renderSchedule();
  renderThreads();
  switchPatient(next.id);
  toast('Patient deleted');
@@ -1302,7 +1302,7 @@ async function boot(){
  renderPatientContext();
  renderProcedureState();
  renderTimeline();
- renderAppointments();
+ renderSchedule();
  renderBodyMap();
  renderSites();
  renderThreads();
