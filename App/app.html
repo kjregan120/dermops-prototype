@@ -366,7 +366,7 @@ button{cursor:pointer}
 </div>
 <div class="modal" id="siteModal">
   <div class="modal-card">
-    <h3>New Skin Site</h3>
+    <h3 id="siteModalTitle">New Skin Site</h3>
     <div class="form-grid">
       <div class="full"><label class="small">Label</label><input id="smLabel" class="btn" style="width:100%" placeholder="e.g. Right cheek lesion"></div>
       <div class="full"><label class="small">Diagnosis</label>
@@ -375,9 +375,20 @@ button{cursor:pointer}
       <div class="full"><label class="small">Procedure</label>
         <select id="smProcedure" class="btn" style="width:100%" disabled><option value="">Select a diagnosis first</option></select>
       </div>
+      <div><label class="small">Size (mm)</label><input id="smSizeMm" type="number" min="0" step="0.5" class="btn" style="width:100%" placeholder="Optional"></div>
+      <div><label class="small">Status</label>
+        <select id="smStatus" class="btn" style="width:100%">
+          <option value="observe">Observe</option>
+          <option value="active">Active</option>
+          <option value="treated">Treated</option>
+          <option value="resolved">Resolved</option>
+          <option value="entered-in-error">Entered in Error</option>
+        </select>
+      </div>
+      <div class="full"><label class="small">Biopsy Date</label><input id="smBiopsyDate" type="date" class="btn" style="width:100%"></div>
       <div class="full"><label class="small">Notes</label><textarea id="smNotes" class="btn" style="width:100%;min-height:80px" placeholder="Optional clinical notes"></textarea></div>
     </div>
-    <div class="modal-actions"><button class="btn" onclick="cancelPlacement()">Cancel</button><button class="btn primary" onclick="confirmPlacement()">Save Site</button></div>
+    <div class="modal-actions"><button class="btn" onclick="cancelPlacement()">Cancel</button><button class="btn primary" onclick="saveSiteModal()">Save Site</button></div>
   </div>
 </div>
 <div class="modal" id="patientModal">
@@ -539,6 +550,7 @@ const bodyViews=['front','back','left','right'];
 let currentBodyView='front';
 let addSiteMode=false;
 let tempMarker=null;
+let editingSiteId=null;
 let sexOverride=null;
 function sexKeyOf(p){ if(sexOverride==='male'||sexOverride==='female') return sexOverride; return p.sex.slice(-1)==='M' ? 'male':'female'; }
 function syncSexToggle(){
@@ -589,11 +601,32 @@ function onDxChange(){
  }
 }
 function openSiteModal(){
+ editingSiteId=null;
+ document.getElementById('siteModalTitle').textContent='New Skin Site';
  populateDxSelect();
  document.getElementById('smLabel').value='';
  document.getElementById('smNotes').value='';
+ document.getElementById('smSizeMm').value='';
+ document.getElementById('smStatus').value='observe';
+ document.getElementById('smBiopsyDate').value='';
  document.getElementById('smProcedure').innerHTML='<option value="">Select a diagnosis first</option>';
  document.getElementById('smProcedure').disabled=true;
+ document.getElementById('siteModal').classList.add('open');
+}
+function openEditSiteModal(id){
+ const s=DB.skinSites.get(id);
+ if(!s) return;
+ editingSiteId=id;
+ document.getElementById('siteModalTitle').textContent='Edit Skin Site';
+ populateDxSelect();
+ document.getElementById('smLabel').value=s.title;
+ document.getElementById('smDx').value=s.diagnosis;
+ onDxChange();
+ if(s.procedure) document.getElementById('smProcedure').value=s.procedure;
+ document.getElementById('smNotes').value=s.notes||'';
+ document.getElementById('smSizeMm').value=s.sizeMm ?? '';
+ document.getElementById('smStatus').value=s.status;
+ document.getElementById('smBiopsyDate').value=s.biopsyDate||'';
  document.getElementById('siteModal').classList.add('open');
 }
 function closeSiteModal(){ document.getElementById('siteModal').classList.remove('open'); }
@@ -647,27 +680,47 @@ function handleBodyClick(e){
 function updateTempMarkerSize(v){ if(tempMarker){ tempMarker.size=+v; renderMarkers(); } }
 function cancelPlacement(){
  tempMarker=null;
+ editingSiteId=null;
  closeSiteModal();
  renderMarkers();
 }
-function confirmPlacement(){
- if(!tempMarker){ toast('Tap the body to choose a location first'); return; }
+function saveSiteModal(){
  const label=document.getElementById('smLabel').value.trim();
  const dx=document.getElementById('smDx').value || 'Unspecified';
  const procedure=document.getElementById('smProcedure').value;
  const notes=document.getElementById('smNotes').value.trim();
+ const sizeMmRaw=document.getElementById('smSizeMm').value;
+ const sizeMm=sizeMmRaw?+sizeMmRaw:null;
+ const status=document.getElementById('smStatus').value;
+ const biopsyDate=document.getElementById('smBiopsyDate').value||null;
+
+ if(editingSiteId){
+  DB.skinSites.update(editingSiteId, {
+   title: label||dx||'Unnamed Site', diagnosis:dx, procedure,
+   sizeMm, status, biopsyDate, notes
+  });
+  selectedSite=editingSiteId;
+  editingSiteId=null;
+  closeSiteModal();
+  renderBodyMap();
+  renderSites();
+  toast('Site updated');
+  return;
+ }
+
+ if(!tempMarker){ toast('Tap the body to choose a location first'); return; }
  const created = DB.skinSites.create({
    customerId: currentPatientId,
    title: label || dx || 'New Site',
    diagnosis: dx,
    procedure,
-   sizeMm: null,
-   status: 'observe',
+   sizeMm,
+   status,
    view: tempMarker.view,
    x: tempMarker.x,
    y: tempMarker.y,
    sizeStep: tempMarker.size,
-   biopsyDate: null,
+   biopsyDate,
    notes: notes || 'Added from body map.'
  });
  selectedSite=created.id;
@@ -903,7 +956,7 @@ function renderSites(){
  const s=list.find(x=>x.id===selectedSite);
  if(!s){ detailEl.innerHTML='<div class="small" style="padding:8px 0">No skin sites tracked for this patient yet.</div>'; return; }
  detailEl.innerHTML=`<div class="clinical-card card" style="box-shadow:none">
-   <div class="head"><h3>${s.title}</h3><button class="btn ghost" onclick="toast('Edit site placeholder')">Edit</button></div>
+   <div class="head"><h3>${s.title}</h3><button class="btn ghost" onclick="openEditSiteModal(${s.id})">Edit</button></div>
    <div class="clinical-row"><div class="k">Diagnosis</div><div class="v">${s.diagnosis}</div></div>
    <div class="clinical-row"><div class="k">Size</div><div class="v">${s.sizeMm?s.sizeMm+' mm':'—'}</div></div>
    <div class="clinical-row"><div class="k">Biopsy</div><div class="v">${s.biopsyDate?isoDateToUS(s.biopsyDate):'—'}</div></div>
